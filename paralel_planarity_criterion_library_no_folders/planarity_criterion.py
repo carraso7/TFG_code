@@ -13,6 +13,8 @@ from collections import deque
 
 from itertools import combinations
 
+import math
+
 
 class PlanarityCriterion:  # TODO COMENTAR
 
@@ -309,18 +311,48 @@ class CNF2Solver:
                            n_list, edge_index_map, cycle_index_map
                            ): ## TODO Hacerlo con los tres tipos de lista
         adding_edges = set([])
+        # P => P
         if n_list == 0:
             for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][n_list]:
-                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][0]) ## TODO apañar aquí que no se haga con el id del cycle
+                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][n_list]) ## TODO apañar aquí que no se haga con el id del cycle
             for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][1]:
                 adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][2])
-        # if len(adding_edges) > 0: print(prev_CNF_lists, CNF_lists, edge, cycle, n_list) ###
+        
+        # P => N
+        if n_list == 1: 
+            # P => N => N
+            for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][n_list]:
+                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][3]) ## TODO apañar aquí que no se haga con el id del cycle
+            # P => P => N
+            for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][0]:
+                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][1])
+                
+        # N => P
+        if n_list == 2: 
+            # N => P => P
+            for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][n_list]:
+                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][0]) ## TODO apañar aquí que no se haga con el id del cycle
+            # N => N => P
+            for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][3]:
+                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][2])
+                
+        # N => N
+        if n_list == 3: 
+            # N => N => N
+            for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][n_list]:
+                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][n_list]) ## TODO apañar aquí que no se haga con el id del cycle
+            # N => P => N
+            for edge_cycle in CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][2]:
+                adding_edges.update(prev_CNF_lists[edge_index_map[edge_cycle[0]]][edge_cycle[1]][1])
+        
         return adding_edges ### TODO REVISAR RESULTADOS Y HACER PARA CUALQUIER N_LIST. Probar si con más iteraciones no cambia la lista
     
-    def update_CNF_iterative(self, CNF_lists, G, fundamental_cycles,
-                               edge_index_map, cycle_index_map
-                               ):
-        for i in range(1):#(math.ceil(math.log2(len(fundamental_cycles) * len(G.edges())))): ### TODO QUITAR ESTO Y EXPLICAR Y DEMOSTRAR PQ HAY QUE PONER EL LOG
+    def update_CNF_iterative(self, CNF_lists, G, fundamental_cycles, 
+                             edge_index_map, cycle_index_map
+                             ):
+        if len(fundamental_cycles) == 0: ### TODO SEGURAMENTE SE PUEDA QUITAR SI ASEGURAMOS TRICONNECTED
+            return CNF_lists
+        for i in range(math.ceil(math.log2(len(fundamental_cycles) * len(G.edges())))): ### TODO QUITAR ESTO Y EXPLICAR Y DEMOSTRAR PQ HAY QUE PONER EL LOG
             prev_CNF_lists = CNF_lists.copy()
             for cycle in fundamental_cycles:
                 for edge in G.edges():
@@ -332,7 +364,7 @@ class CNF2Solver:
                         # if len(adding_edges ) > 1: ###
                         #     print("adding",adding_edges)
                         #     print(CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][i])
-                        CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][i].update(adding_edges)
+                        CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][n_list].update(adding_edges)
                         # if len(adding_edges ) > 1:print(CNF_lists[edge_index_map[edge]][cycle_index_map[tuple(cycle)]][i]) ###
         
                         # for adding_edge in adding edges:
