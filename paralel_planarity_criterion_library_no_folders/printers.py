@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import textwrap
 
 import matplotlib.cm as cm
 import numpy as np
@@ -93,3 +94,83 @@ class Printer:
                     print(f"    NN_c,e (Negative-Negative): {cnf_conditions[3]}")
             print("-" * 50)
 
+### TODO UTILIZAR ESTA CLASE EN LUGAR DE LA DE TRICOMPONENTS EN LOS EJEMPLOS
+class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER MÁS DE UNA CLASE EN EL MISMO ARCHIVO O DEBEN ESTAR EN ARCHIVOS SEPARADOS. 
+### TODO ESCRIBIR A NETWORKX PARA VER SI QUIEREN MI LIBRERÍA
+
+    def print_n_connected_components(self, G, NCC, max_line_length=40, N=-1):
+        # Initialize classification dictionaries
+        node_classes = {}  # Store which NCC each node belongs to
+        edge_classes = {}  # Store which NCC each edge belongs to
+        
+        # Assign nodes and edges to their NCCs
+        for class_idx, component in enumerate(NCC):
+            for node in component:
+                node_classes.setdefault(node, []).append(class_idx)
+            
+            for edge in G.edges():
+                if edge[0] in component and edge[1] in component:
+                    edge_classes.setdefault(edge, []).append(class_idx)
+        
+        # Define colors:
+        num_components = len(NCC)
+        color_map = plt.cm.get_cmap("tab10", num_components)  # Use tab10 colormap
+    
+        node_colors = []
+        node_labels = {}  # Store font colors for each node
+        for node in G.nodes():
+            if node not in node_classes:  
+                node_colors.append("black")  # Uncategorized node
+                node_labels[node] = "white"  # Set font color to white for black nodes
+            elif len(node_classes[node]) > 1:  
+                node_colors.append("gray")  # Shared node
+                node_labels[node] = "black"  # Default font color
+            else:  
+                node_colors.append(color_map(node_classes[node][0]))  
+                node_labels[node] = "black"  # Default font color
+    
+        edge_colors = []
+        for edge in G.edges():
+            if edge not in edge_classes:  
+                edge_colors.append("black")  
+            elif len(edge_classes[edge]) > 1:  
+                edge_colors.append("gray")  
+            else:  
+                edge_colors.append(color_map(edge_classes[edge][0]))  
+    
+        # Create figure and adjust layout
+        fig, ax = plt.subplots(figsize=(7, 5))
+        pos = nx.spring_layout(G, seed=42)  
+        nx.draw(G, pos, with_labels=True, node_color=node_colors, edge_color=edge_colors, 
+                node_size=600, edge_cmap=color_map, font_size=10, ax=ax)
+        
+        # Draw labels with appropriate font color
+        for node, (x, y) in pos.items():
+            plt.text(x, y, str(node), ha='center', va='center', 
+                     color=node_labels[node])
+    
+        if (N == -1):
+            N = "N"
+        else:
+            N = str(N)
+        
+        # Add title
+        plt.title("Graph with " + N + "-connected Components\n(Gray = Shared, Black = Uncategorized)")
+    
+        # Adjust margins to make space for the text (left margin for separation)
+        plt.subplots_adjust(left=0.3)  # Increase left margin to create space
+    
+        # Format the NCC list with line wrapping
+        formatted_ncc_list = []
+        for i, comp in enumerate(NCC):
+            comp_str = N + f"CC {i+1}: {sorted(list(comp))}"
+            wrapped_lines = textwrap.wrap(comp_str, width=max_line_length)
+            formatted_ncc_list.extend(wrapped_lines)
+    
+        # Move the text to the left and ensure proper spacing
+        subtitle_text = "\n".join(formatted_ncc_list)
+        plt.figtext(0.02, 0.5, subtitle_text, wrap=True, horizontalalignment='left', 
+                    verticalalignment='center', fontsize=10)
+    
+        plt.show()
+    

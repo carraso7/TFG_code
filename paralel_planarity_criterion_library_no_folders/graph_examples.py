@@ -1,4 +1,6 @@
 import networkx as nx
+import random
+from triconnected_components import TriconnectedFinder
 
 class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
 
@@ -184,5 +186,96 @@ class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
         contracted = nx.contracted_nodes(combined_graph, 5, 11, self_loops=False)
         contracted = nx.contracted_nodes(contracted, 6, 0, self_loops=False)
         graph_examples.append(contracted)
+        
+        edges = [
+            (0, 2), (0, 3), (0, 4), (0, 5),
+            (1, 3), (1, 4), (1, 5),
+            (2, 3),
+            (3, 4), (4, 5),
+            (2, 6), (4, 6),
+            (2, 7), (4, 7)
+        ]
+        
+        # Create the graph that fails in triconnected components
+        failing_graph = nx.Graph()
+        failing_graph.add_edges_from(edges)
+        
+        graph_examples.append(failing_graph)
 
         return graph_examples
+    
+    
+    @staticmethod
+    def extract_triconnected_subgraph(n=50, seed=42, planar=None):
+        """
+        Generate random graphs until one contains a triconnected component 
+        matching the specified planarity condition.
+
+        Parameters
+        ----------
+        n : int
+            Number of nodes in the random graph.
+        seed : int
+            Random seed for reproducibility.
+        planar : bool or None
+            If True, return a planar triconnected component.
+            If False, return a non-planar one.
+            If None, return any triconnected component.
+
+        Returns
+        -------
+        G : networkx.Graph
+            The full graph containing the desired TCC.
+        tcc_subgraph : networkx.Graph
+            A subgraph of G that is a matching triconnected component.
+        """
+        attempts = 0
+        while True:
+            attempts += 1
+            random.seed(seed + attempts)  # Change seed per attempt
+            G = nx.gnp_random_graph(n=n, p=0.2, seed=seed + attempts)
+
+            if not nx.is_connected(G):
+                G = max((G.subgraph(c) for c in nx.connected_components(G)), key=len).copy()
+
+            finder = TriconnectedFinder()
+            TCCs, *_ = finder.triconnected_comps(G)
+
+            if not TCCs:
+                continue  # Try another graph if no TCCs found
+
+            # Shuffle TCCs to avoid always picking the same first one
+            random.shuffle(TCCs)
+
+            for component in TCCs:
+                print(component)
+                subG = G.subgraph(component).copy()
+                is_planar, _ = nx.check_planarity(subG)
+
+                if planar is None or is_planar == planar:
+                    return subG, G
+"""
+    @staticmethod PREV
+    def extract_triconnected_subgraph(n=50, seed=42):
+        random.seed(seed)
+        G = nx.gnp_random_graph(n=n, p=0.2, seed=seed)
+        
+        # Make sure it's connected (optional, improves quality)
+        if not nx.is_connected(G):
+            G = max((G.subgraph(c) for c in nx.connected_components(G)), key=len).copy()
+    
+        # Use your TriconnectedFinder class
+        finder = TriconnectedFinder()
+        TCCs, *_ = finder.triconnected_comps(G)
+    
+        if not TCCs:
+            print("No triconnected component found. Try increasing edge density or node count.")
+            return G, None
+    
+        # Select the largest triconnected component
+        largest_tcc = max(TCCs, key=len)
+        tcc_subgraph = G.subgraph(largest_tcc).copy()
+    
+        return G, tcc_subgraph
+    
+"""

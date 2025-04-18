@@ -302,6 +302,21 @@ class PlanarityCriterion:  # TODO COMENTAR
                                        bridges_all_cycles, edge_index_map, 
                                        CNF_lists)
         return CNF_lists
+    
+    def compute_lt(self):
+        pass
+    
+    
+    def get_peripheral_basis(self):
+        pass
+    
+    
+    def get_plane_mesh(self):
+        pass
+    
+    
+    def is_planar(self):
+        pass
 
 ### TODO HAY AQUÍ UN PRINTER QUE FALTA POR PONER de cnf_lists_by_cycle
 
@@ -372,6 +387,10 @@ class CNF2Solver:
 
         return CNF_lists
     
+    def solve_CNF_from_1_list(self, CNF_lists):
+        ### TODO DEMOSTRAR SI SE PUEDE HACER CON UNA ÚNICA LISTA Y SI SE PUEDE, 
+        ### REFERENCIAR EN LOS COMENTARIOS.
+        pass
     
     
 """
