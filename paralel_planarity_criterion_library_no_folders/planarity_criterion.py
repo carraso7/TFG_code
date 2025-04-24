@@ -56,6 +56,10 @@ class PlanarityCriterion:  # TODO COMENTAR
         # tratamiento especial de aquellas que contienen algún nodo del ciclo, separando esas por el nodo del ciclo. Para ello se puede
         # Hacer DFS desde el nodo del ciclo en las componentes que tengan un ciclo y para cada vecino del nodo del ciclo asignar una nueva
         # componente triconnexa distinta de la del resto de vecinos
+        
+        ### Ver primero componentes conexas quitando edges del ciclo y luego
+        # quitar los nodos del ciclo de esas componentes para ver qué separaciones 
+        # provoca el ciclo
 
         bridges_all_cycles = {}
         attachment_vertices_all_cycles = {}

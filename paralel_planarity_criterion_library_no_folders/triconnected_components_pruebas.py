@@ -2,7 +2,7 @@
 """
 Created on Thu Mar 20 14:33:45 2025
 
-@author: carlo
+@author: carlos
 """
 ### TODO VER SI SOBRA ALGÚN IMPORT
 import networkx as nx
@@ -11,6 +11,7 @@ import networkx as nx
 from itertools import combinations
 
 class TriconnectedFinder():
+    
     
     def __find_sep_pairs(self, G):
         """
@@ -34,6 +35,7 @@ class TriconnectedFinder():
             if not nx.is_connected(H):
                 sep_pairs.append(sp)
         return sep_pairs
+    
     
     def __find_connected_components(self, G, sep_pairs):
         """
@@ -66,6 +68,7 @@ class TriconnectedFinder():
             component_labels = {node: i for i, component in enumerate(nx.connected_components(H)) for node in component}
             connected_components[sep_pair] = component_labels
         return connected_components
+    
     
     def __find_relation_R(self, G, connected_components):
         """
@@ -160,10 +163,11 @@ class TriconnectedFinder():
         node_index = {node: i for i, node in enumerate(G.nodes)}
         triply_components = []
         for rel_T_elem in rel_T:
-            triply_component = list(rel_T_elem)
+            ### TODO IGUAL ES MÁS FÁCIL ITERAR POR LOS SEP PAIR A TRAVÉS DE CADA TCC ENCONTRADA
+            triply_component = list(rel_T_elem) ### TODO AQUÍ REVISAR SI TIENE DENTRO UN SEP PAIR Y EN TAL CASO QUIZÁ AÑADIR UN GHOST EDGE
             for node in G.nodes:
                 if rel_R[node_index[rel_T_elem[0]]][node_index[node]] and rel_R[node_index[rel_T_elem[1]]][node_index[node]] and rel_R[node_index[rel_T_elem[2]]][node_index[node]]:
-                    triply_component.append(node)
+                    triply_component.append(node) ### TODO CADA VEZ QUE SE AÑADE UNO, VER SI FORMA PARTE DE UN SEP PAIR Y, EN TAL CASO, SI TAMBIÉN ESTÁ EL OTRO
             triply_components.append(triply_component)
         return list(set(frozenset(comp) for comp in triply_components))
     
