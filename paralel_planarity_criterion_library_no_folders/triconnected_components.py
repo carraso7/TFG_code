@@ -13,7 +13,7 @@ from itertools import combinations
 class TriconnectedFinder():
     
     
-    def __find_sep_pairs(self, G):
+    def __find_sep_pairs(self, G): # TODO VER SI SON DOS LÍNEAS AL FINAL TBN EN MÉTODOS PRIVADOS
         """
         Finds and returns all separation pairs of graph G
         
