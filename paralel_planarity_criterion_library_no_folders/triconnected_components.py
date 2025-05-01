@@ -2,7 +2,7 @@
 """
 Created on Thu Mar 20 14:33:45 2025
 
-@author: carlo
+@author: carlos
 """
 ### TODO VER SI SOBRA ALGÚN IMPORT
 import networkx as nx
@@ -12,7 +12,8 @@ from itertools import combinations
 
 class TriconnectedFinder():
     
-    def __find_sep_pairs(self, G):
+    
+    def __find_sep_pairs(self, G): # TODO VER SI SON DOS LÍNEAS AL FINAL TBN EN MÉTODOS PRIVADOS
         """
         Finds and returns all separation pairs of graph G
         
@@ -34,6 +35,7 @@ class TriconnectedFinder():
             if not nx.is_connected(H):
                 sep_pairs.append(sp)
         return sep_pairs
+    
     
     def __find_connected_components(self, G, sep_pairs):
         """
@@ -66,6 +68,7 @@ class TriconnectedFinder():
             component_labels = {node: i for i, component in enumerate(nx.connected_components(H)) for node in component}
             connected_components[sep_pair] = component_labels
         return connected_components
+    
     
     def __find_relation_R(self, G, connected_components):
         """
