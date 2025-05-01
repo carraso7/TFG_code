@@ -33,6 +33,7 @@ class PlanarityCriterion:  # TODO COMENTAR
     # TODO FALTA AQUÍ UN PRINTER QUE HAY QUE INCLUIR EN UN NUEVO ARCHIVO QUE SEA PRINTERS
 
     # TODO QUITAR LO DE UNDIRECTED
+    # TODO VER SI SE PUEDE HACER CON NETWORKX
     def fundamental_cycles(self, G, spanning_tree_undirected): ## TODO CAMBIAR A PRIVADO O CAMBIAR A UNA CLASE DE ÚTILES
         # Ensure spanning tree edges are treated as undirected
         spanning_tree_edges = set(spanning_tree_undirected.edges())
@@ -74,8 +75,9 @@ class PlanarityCriterion:  # TODO COMENTAR
         
         for c in fundamental_cycles:
             print("---GETTING BRIDGES---")  ######TODO
+            print("cycle", c)
             attachment_vertices = [] ### TODO CREO QUE SE PUEDE HACER SIN ATT VERT GLOBAL
-            attachment_edges = []
+            attachment_edges = [] ### TODO CHEKEAR SI ESTA LISTA VIOLA PARALELIZACIÓN.
             bridges = []
             
             # Create a copy of the graph and remove cycle edges
@@ -84,24 +86,27 @@ class PlanarityCriterion:  # TODO COMENTAR
             G_no_c_edges.remove_edges_from(
                 [(c[i], c[i+1]) for i in range(len(c)-1)])
             G_no_c_nodes.remove_nodes_from(c)
-            print(G_no_c_edges.edges())  ######TODO
         
-            for cycle_node in c:  ### TODO REVISAR REPETICIONES AQUÍ.
-                print(G_no_c_edges.edges(cycle_node)) ######TODO
+            for cycle_node in c[:-1]:  ### TODO REVISAR REPETICIONES AQUÍ.
+                print(cycle_node, "edges: ", G_no_c_edges.edges(cycle_node)) ######TODO
                 for att_edge in G_no_c_edges.edges(cycle_node):
-                    print(att_edge) ######TODO
+                    print("att_edge:", att_edge) ######TODO
                     if att_edge[0] not in c or att_edge[1] not in c:
                         attachment_vertices.append(att_edge[0] if att_edge[0] not in c else att_edge[1])
                         # Add edge to attachment edges only if it has one
                         # node outside of the cycle
                         attachment_edges.append(att_edge) 
-                    else: ### TODO INVERT THIS IF
-                        bridge = {
-                            "edges": [att_edge],
-                            "att_ver": set([att_edge[0], att_edge[1]])
-                        }
-                        attachment_vertices.extend([att_edge[0], att_edge[1]])
-                        bridges.append(bridge)
+                    else: ### TODO INVERT THIS IF AND MAKE ELIF WITH NEXT CLAUSE
+                        if (att_edge not in attachment_edges) and ((att_edge[1], att_edge[0]) not in attachment_edges):
+                            print(attachment_edges) ### TODO QUITAR Y ABAJO TMBN
+                            print((att_edge not in attachment_edges) , (att_edge[1], att_edge[0] not in attachment_edges))
+                            bridge = {
+                                "edges": [att_edge],
+                                "att_ver": set([att_edge[0], att_edge[1]])
+                            }
+                            bridges.append(bridge)
+                            attachment_vertices.extend([att_edge[0], att_edge[1]])
+                            attachment_edges.append(att_edge)
         
             # Eliminate duplicates ### TODO HACE FALTA??
             attachment_vertices = list(set(attachment_vertices))
@@ -133,7 +138,7 @@ class PlanarityCriterion:  # TODO COMENTAR
         return bridges_all_cycles
         # print(attachment_vertices_all_cycles)  ### ELIMINADO E INTRODUCIDO EN DICT
 
-    
+"""    
     def get_bridges1(self, G, fundamental_cycles):
         # TODO intentar repetir el algoritmo buscando primero componentes triconnexas quitando los edges del ciclo y después haciendo
         # tratamiento especial de aquellas que contienen algún nodo del ciclo, separando esas por el nodo del ciclo. Para ello se puede
@@ -207,6 +212,7 @@ class PlanarityCriterion:  # TODO COMENTAR
 
         return bridges_all_cycles
         # print(attachment_vertices_all_cycles)  ### ELIMINADO E INTRODUCIDO EN DICT
+"""
 
     ### Auxiliar functions for getting 2 CNF conditions ###
 
