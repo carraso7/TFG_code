@@ -99,6 +99,117 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
 ### TODO ESCRIBIR A NETWORKX PARA VER SI QUIEREN MI LIBRERÍA
 
     def print_n_connected_components(self, G, NCC, max_line_length=40, N=-1):
+        import matplotlib.pyplot as plt
+        import networkx as nx
+        import textwrap
+    
+        # Initialize classification dictionaries
+        node_classes = {}
+        edge_classes = {}
+        virtual_edge_classes = {} 
+    
+        # Assign nodes and edges to their NCCs
+        for class_idx, component in enumerate(NCC):
+            if N == 3:
+                print(component, NCC)
+                nodes = component["node list"]
+                virt_edges = component["virtual edges"]
+            else:
+                nodes = component
+                virt_edges = []
+    
+            for node in nodes:
+                node_classes.setdefault(node, []).append(class_idx)
+    
+            for edge in G.edges():
+                if edge[0] in nodes and edge[1] in nodes:
+                    edge_classes.setdefault(edge, []).append(class_idx)
+    
+            # Collect virtual edges info (only for N==3)
+            for v_edge in virt_edges:
+                # Normalize edge to (small, large) to handle undirected graphs
+                v_edge_norm = tuple(sorted(v_edge))
+                virtual_edge_classes.setdefault(v_edge_norm, []).append(class_idx)
+    
+        # Define colors:
+        num_components = len(NCC)
+        color_map = plt.cm.get_cmap("tab10", num_components)
+    
+        node_colors = []
+        node_labels = {}
+        for node in G.nodes():
+            if node not in node_classes:
+                node_colors.append("black")
+                node_labels[node] = "white"
+            elif len(node_classes[node]) > 1:
+                node_colors.append("gray")
+                node_labels[node] = "black"
+            else:
+                node_colors.append(color_map(node_classes[node][0]))
+                node_labels[node] = "black"
+    
+        edge_colors = []
+        for edge in G.edges():
+            if edge not in edge_classes:
+                edge_colors.append("black")
+            elif len(edge_classes[edge]) > 1:
+                edge_colors.append("gray")
+            else:
+                edge_colors.append(color_map(edge_classes[edge][0]))
+    
+        # Create figure and adjust layout
+        fig, ax = plt.subplots(figsize=(7, 5))
+        pos = nx.spring_layout(G, seed=42)
+    
+        nx.draw(
+            G, pos, with_labels=False, node_color=node_colors, edge_color=edge_colors,
+            node_size=600, edge_cmap=color_map, font_size=10, ax=ax
+        )
+    
+        # Draw labels with appropriate font color
+        for node, (x, y) in pos.items():
+            plt.text(x, y, str(node), ha='center', va='center', color=node_labels[node])
+    
+        # Draw virtual edges (only for N==3)
+        if N == 3:
+            for v_edge, classes in virtual_edge_classes.items():
+                x0, y0 = pos[v_edge[0]]
+                x1, y1 = pos[v_edge[1]]
+                color = "gray" if len(classes) > 1 else color_map(classes[0])
+                ax.plot(
+                    [x0, x1], [y0, y1],
+                    linestyle='--',
+                    color=color,
+                    linewidth=2
+                )
+    
+        N_label = str(N) if N != -1 else "N"
+    
+        plt.title(f"Graph with {N_label}-connected Components\n(Gray = Shared, Black = Uncategorized)")
+    
+        # Adjust margins for text
+        plt.subplots_adjust(left=0.3)
+    
+        # Format the NCC list with line wrapping
+        formatted_ncc_list = []
+        for i, component in enumerate(NCC):
+            if N == 3:
+                comp_nodes = sorted(list(component["node list"]))
+                comp_str = f"{N_label}CC {i+1}: {comp_nodes}"
+            else:
+                comp_str = f"{N_label}CC {i+1}: {sorted(list(component))}"
+            wrapped_lines = textwrap.wrap(comp_str, width=max_line_length)
+            formatted_ncc_list.extend(wrapped_lines)
+    
+        subtitle_text = "\n".join(formatted_ncc_list)
+        plt.figtext(
+            0.02, 0.5, subtitle_text, wrap=True,
+            horizontalalignment='left', verticalalignment='center', fontsize=10
+        )
+    
+        plt.show()
+
+    def print_n_connected_components1(self, G, NCC, max_line_length=40, N=-1):
         # Initialize classification dictionaries
         node_classes = {}  # Store which NCC each node belongs to
         edge_classes = {}  # Store which NCC each edge belongs to

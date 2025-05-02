@@ -52,7 +52,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             fundamental_cycles.append(cycle)
         return fundamental_cycles
     
-    def get_bridges(self, G, fundamental_cycles):
+    def get_bridges(self, G, fundamental_cycles):  ### TODO TESTEAR ESTE MÉTODO DE BRIDGES CONTRA EL OTRO GET_BRIDGES_1
         # TODO intentar repetir el algoritmo buscando primero componentes triconnexas quitando los edges del ciclo y después haciendo
         # tratamiento especial de aquellas que contienen algún nodo del ciclo, separando esas por el nodo del ciclo. Para ello se puede
         # Hacer DFS desde el nodo del ciclo en las componentes que tengan un ciclo y para cada vecino del nodo del ciclo asignar una nueva
@@ -74,8 +74,8 @@ class PlanarityCriterion:  # TODO COMENTAR
 
         
         for c in fundamental_cycles:
-            print("---GETTING BRIDGES---")  ######TODO
-            print("cycle", c)
+            #print("---GETTING BRIDGES---")  ######TODO
+            #print("cycle", c)
             attachment_vertices = [] ### TODO CREO QUE SE PUEDE HACER SIN ATT VERT GLOBAL
             attachment_edges = [] ### TODO CHEKEAR SI ESTA LISTA VIOLA PARALELIZACIÓN.
             bridges = []
@@ -88,9 +88,9 @@ class PlanarityCriterion:  # TODO COMENTAR
             G_no_c_nodes.remove_nodes_from(c)
         
             for cycle_node in c[:-1]:  ### TODO REVISAR REPETICIONES AQUÍ.
-                print(cycle_node, "edges: ", G_no_c_edges.edges(cycle_node)) ######TODO
+                #print(cycle_node, "edges: ", G_no_c_edges.edges(cycle_node)) ######TODO
                 for att_edge in G_no_c_edges.edges(cycle_node):
-                    print("att_edge:", att_edge) ######TODO
+                    #print("att_edge:", att_edge) ######TODO
                     if att_edge[0] not in c or att_edge[1] not in c:
                         attachment_vertices.append(att_edge[0] if att_edge[0] not in c else att_edge[1])
                         # Add edge to attachment edges only if it has one
@@ -98,8 +98,8 @@ class PlanarityCriterion:  # TODO COMENTAR
                         attachment_edges.append(att_edge) 
                     else: ### TODO INVERT THIS IF AND MAKE ELIF WITH NEXT CLAUSE
                         if (att_edge not in attachment_edges) and ((att_edge[1], att_edge[0]) not in attachment_edges):
-                            print(attachment_edges) ### TODO QUITAR Y ABAJO TMBN
-                            print((att_edge not in attachment_edges) , (att_edge[1], att_edge[0] not in attachment_edges))
+                            #print(attachment_edges) ### TODO QUITAR Y ABAJO TMBN
+                            #print((att_edge not in attachment_edges) , (att_edge[1], att_edge[0] not in attachment_edges))
                             bridge = {
                                 "edges": [att_edge],
                                 "att_ver": set([att_edge[0], att_edge[1]])
@@ -138,7 +138,7 @@ class PlanarityCriterion:  # TODO COMENTAR
         return bridges_all_cycles
         # print(attachment_vertices_all_cycles)  ### ELIMINADO E INTRODUCIDO EN DICT
 
-"""    
+    """    
     def get_bridges1(self, G, fundamental_cycles):
         # TODO intentar repetir el algoritmo buscando primero componentes triconnexas quitando los edges del ciclo y después haciendo
         # tratamiento especial de aquellas que contienen algún nodo del ciclo, separando esas por el nodo del ciclo. Para ello se puede
@@ -212,7 +212,7 @@ class PlanarityCriterion:  # TODO COMENTAR
 
         return bridges_all_cycles
         # print(attachment_vertices_all_cycles)  ### ELIMINADO E INTRODUCIDO EN DICT
-"""
+    """
 
     ### Auxiliar functions for getting 2 CNF conditions ###
 

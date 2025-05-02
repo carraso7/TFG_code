@@ -139,7 +139,7 @@ class TriconnectedFinder():
         return relation_T
     
     
-    def __find_triply_connected_from_T_R(self, G, rel_T, rel_R):
+    def __find_triply_connected_from_T_R(self, G, rel_T, rel_R, sep_pairs):
         """
         Function to find triply connected components from relations T and R of 
         graph ´G´
@@ -160,16 +160,30 @@ class TriconnectedFinder():
             component of ´G´.
 
         """
+        print(sep_pairs)### todo quitar
         node_index = {node: i for i, node in enumerate(G.nodes)}
         triply_components = []
         for rel_T_elem in rel_T:
-            triply_component = list(rel_T_elem)
+            ### TODO IGUAL ES MÁS FÁCIL ITERAR POR LOS SEP PAIR A TRAVÉS DE CADA TCC ENCONTRADA
+            triply_component = list(rel_T_elem) ### TODO AQUÍ REVISAR SI TIENE DENTRO UN SEP PAIR Y EN TAL CASO QUIZÁ AÑADIR UN GHOST EDGE
             for node in G.nodes:
                 if rel_R[node_index[rel_T_elem[0]]][node_index[node]] and rel_R[node_index[rel_T_elem[1]]][node_index[node]] and rel_R[node_index[rel_T_elem[2]]][node_index[node]]:
-                    triply_component.append(node)
+                    triply_component.append(node) ### TODO CADA VEZ QUE SE AÑADE UNO, VER SI FORMA PARTE DE UN SEP PAIR Y, EN TAL CASO, SI TAMBIÉN ESTÁ EL OTRO
             triply_components.append(triply_component)
-        return list(set(frozenset(comp) for comp in triply_components))
-    
+        TCCs_lists = list(set(frozenset(comp) for comp in triply_components))
+        TCCs = []
+        for tcc_list in TCCs_lists:
+            tcc = {"node list": tcc_list, "virtual edges": []}
+            for sep_pair in sep_pairs:
+                if (sep_pair == (4, 2)) or (sep_pair == (2, 4)):
+                    print(G.nodes())### todo quitar
+                    print((sep_pair[0] in tcc_list), (sep_pair[1] in tcc_list), (sep_pair not in G.edges()))### todo quitar
+                if (sep_pair[0] in tcc_list) and (sep_pair[1] in tcc_list) and (sep_pair not in G.edges()):  ### TODO VER SI SEP_PAIR TIENE FORMATO CORRECTO
+                    tcc["virtual edges"].append(sep_pair)    
+            TCCs.append(tcc)
+            print(tcc)  ### todo quitar
+        print(TCCs) ### todo quitar
+        return TCCs ### TODO CAMBIAR ESTE TIPO DE SALIDA EN EL PRINTER Y TRATAR VIRTUAL EDGES
     
     def triconnected_comps(self, G):
         """
@@ -203,7 +217,7 @@ class TriconnectedFinder():
             the separation pairs.
 
         """
-        TCCs = []
+        all_TCCs = []
         all_relation_T = []
         all_relation_R = []
         all_connected_components = []
@@ -220,14 +234,14 @@ class TriconnectedFinder():
             connected_components = self.__find_connected_components(subgraph, sep_pairs)
             relation_R = self.__find_relation_R(subgraph, connected_components)
             relation_T = self.__find_relation_T(subgraph, relation_R)
-            TCC = self.__find_triply_connected_from_T_R(subgraph, relation_T, relation_R)
+            TCCs = self.__find_triply_connected_from_T_R(subgraph, relation_T, relation_R, sep_pairs)
             
-            TCCs.extend(TCC)
+            all_TCCs.extend(TCCs)
             all_relation_T.append(relation_T)
             all_relation_R.append(relation_R)
             all_connected_components.append(connected_components)
             all_sep_pairs.append(sep_pairs)
         
-        return TCCs, all_relation_T, all_relation_R, all_connected_components, all_sep_pairs
+        return all_TCCs, all_relation_T, all_relation_R, all_connected_components, all_sep_pairs
 
 
