@@ -7,7 +7,7 @@ Created on Wed May  7 13:58:52 2025
 import math
 
 
-class SAT2_Solver:
+class SAT2_solver:
         
     def mult_matrix_or_and(self, A, B):  ## TODO CHEQUEAR Y TMBN CHEQUEAR DOC
         """
@@ -89,13 +89,13 @@ class SAT2_Solver:
             
         
         
-    def init_transitive_closure(self, clauses, n_variables):
+    def init_transitive_closure(self, implications, n_variables):
         """
         Initializes the transitive closure matrix of a directed graph.
     
         Parameters:
-        - clauses: List of tuples (u, v) where u and v are ints in range n_variables.
-                   Each clause defines an edge in the graph.
+        - implications: List of tuples (u, v) where u and v are ints in range n_variables.
+                   Each implication defines an edge in the graph.
         - n_variables: Total number of variables.
     
         Returns:
@@ -110,19 +110,19 @@ class SAT2_Solver:
         for i in range(n_nodes):
             transitive_closure[i][i] = 1
         
-        # Add edges from clauses
-        for u, v in clauses:
-            ### TODO MIRAR SI ESTO VA ASÍ BIEN, EL FOR Y SI NOS VIENEN LAS IMPLICACIONES NEGATIVAS Y POSITIVAS EN CLAUSES
+        # Add edges from implications
+        for u, v in implications:
+            ### TODO MIRAR SI ESTO VA ASÍ BIEN, EL FOR Y SI NOS VIENEN LAS IMPLICACIONES NEGATIVAS Y POSITIVAS EN implications
             transitive_closure[u][v] = 1
     
         return transitive_closure
     
-    def init_longest_paths(clauses, A1):
+    def init_longest_paths(self, implications, A1):
         """
         Initializes matrix B from the transitive closure matrix A1.
     
         Parameters:
-        - clauses: List of tuples (u, v) indicating directed edges between variables.
+        - implications: List of tuples (u, v) indicating directed edges between variables.
         - A1: Transitive closure matrix (list of lists of 0s and 1s), size (n_variables * 2).
     
         Returns:
@@ -152,27 +152,29 @@ class SAT2_Solver:
         return B
 
     
-    def is_solvable(self, clauses, n_variables):
-        adj_matrix = self.init_transitive_closure(clauses, n_variables)
+    def is_solvable(self, implications, n_variables):
+        adj_matrix = self.init_transitive_closure(implications, n_variables)
         A1 = adj_matrix ## TODO CHEQUEAR SI EL +1 DE ABAJO ESTÁ BIEN
-        for _ in range(math.log2(n_variables * 2) + 1): # 2*n_variables because we take the negated variables as well
+        for _ in range(int(math.log2(n_variables * 2)) + 1): # 2*n_variables because we take the negated variables as well
             A1 = self.mult_matrix_or_and(A1, A1)
         for n_variable in range(n_variables):
             if self.__negated_same_str_component(A1, n_variables, n_variable):
                 return False, A1
         return True, A1
     
-    def get_truth_assigment(self, clauses, n_variables):
-        solvable, A1 = self.is_solvable(clauses, n_variables)
-        if not solvable:
-            return None
-        B1 = self.init_longest_paths(clauses, A1) ### TODO VER SI CLAUSES SON NECESARIAS, CREO Q NO
-        for _ in range(math.log2(n_variables * 2) + 1):## TODO CHEQUEAR SI EL +1  ESTÁ BIEN
+    def get_truth_assigment(self, implications, n_variables):
+        solvable, A1 = self.is_solvable(implications, n_variables)
+        if not solvable:    
+            info = {"A1" : A1, "B1" : None}
+            return None, info
+        B1 = self.init_longest_paths(implications, A1) ### TODO VER SI implications SON NECESARIAS, CREO Q NO
+        for _ in range(int(math.log2(n_variables * 2)) + 1):## TODO CHEQUEAR SI EL +1  ESTÁ BIEN
             B1 = self.mult_matrix_max_plus(B1, B1)
         results = []
         for n_variable in range(n_variables):
             # Each variable is true ifff its longest path to a sink is lower 
             # than the longest path to a sink of the negated variable. 
-            results.append(max(B1[n_variable] <= B1[n_variables + n_variable]))
-        return results, A1, B1
+            results.append(max(B1[n_variable]) <= max(B1[n_variables + n_variable]))
+        info = {"A1" : A1, "B1" : B1}
+        return results, info
                 
