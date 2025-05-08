@@ -7,7 +7,7 @@ Created on Wed May  7 13:58:52 2025
 import math
 
 
-class SAT2_Solver:
+class SAT2_solver:
         
     def mult_matrix_or_and(self, A, B):  ## TODO CHEQUEAR Y TMBN CHEQUEAR DOC
         """
@@ -164,8 +164,9 @@ class SAT2_Solver:
     
     def get_truth_assigment(self, implications, n_variables):
         solvable, A1 = self.is_solvable(implications, n_variables)
-        if not solvable:
-            return None
+        if not solvable:    
+            info = {"A1" : A1, "B1" : None}
+            return None, info
         B1 = self.init_longest_paths(implications, A1) ### TODO VER SI implications SON NECESARIAS, CREO Q NO
         for _ in range(int(math.log2(n_variables * 2)) + 1):## TODO CHEQUEAR SI EL +1  ESTÁ BIEN
             B1 = self.mult_matrix_max_plus(B1, B1)

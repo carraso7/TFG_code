@@ -156,11 +156,12 @@ class TriconnectedFinder():
         Returns
         -------
         list
-            List of frozensets. Each set represents the nodes of a triconnected
-            component of ´G´.
-
+            List of dictionaries with two entries. 'node list' and 
+            'virtual edges'. Each dictionary represents a triconnected block
+            with all its nodes in node list and its virtual edges in 
+            'virtual edges'. Virtual edges are edges of the TCC not in G
         """
-        print(sep_pairs)### todo quitar
+        #print(sep_pairs)### todo quitar
         node_index = {node: i for i, node in enumerate(G.nodes)}
         triply_components = []
         for rel_T_elem in rel_T:
@@ -173,16 +174,16 @@ class TriconnectedFinder():
         TCCs_lists = list(set(frozenset(comp) for comp in triply_components))
         TCCs = []
         for tcc_list in TCCs_lists:
-            tcc = {"node list": tcc_list, "virtual edges": []}
+            tcc = {"node_list": tcc_list, "virtual_edges": []}
             for sep_pair in sep_pairs:
-                if (sep_pair == (4, 2)) or (sep_pair == (2, 4)):
-                    print(G.nodes())### todo quitar
-                    print((sep_pair[0] in tcc_list), (sep_pair[1] in tcc_list), (sep_pair not in G.edges()))### todo quitar
+                #if (sep_pair == (4, 2)) or (sep_pair == (2, 4)):
+                    # print(G.nodes())### todo quitar
+                    # print((sep_pair[0] in tcc_list), (sep_pair[1] in tcc_list), (sep_pair not in G.edges()))### todo quitar
                 if (sep_pair[0] in tcc_list) and (sep_pair[1] in tcc_list) and (sep_pair not in G.edges()):  ### TODO VER SI SEP_PAIR TIENE FORMATO CORRECTO
-                    tcc["virtual edges"].append(sep_pair)    
+                    tcc["virtual_edges"].append(sep_pair)    
             TCCs.append(tcc)
-            print(tcc)  ### todo quitar
-        print(TCCs) ### todo quitar
+            # print(tcc)  ### todo quitar
+        # print(TCCs) ### todo quitar
         return TCCs ### TODO CAMBIAR ESTE TIPO DE SALIDA EN EL PRINTER Y TRATAR VIRTUAL EDGES
     
     def triconnected_comps(self, G):
@@ -196,9 +197,11 @@ class TriconnectedFinder():
 
         Returns
         -------
-        TCCs : list
-            List of frozensets. Each set represents the nodes of a triconnected
-            component of ´G´.
+        TCCs : list            
+            List of dictionaries with two entries. 'node list' and 
+            'virtual edges'. Each dictionary represents a triconnected block
+            with all its nodes in node list and its virtual edges in 
+            'virtual edges'. Virtual edges are edges of the TCC not in G
         all_relation_T : list of lists of tuples of length 3
             One list for each biconnected component containing all the 
             elements of the relation T of that component represented by
@@ -242,6 +245,12 @@ class TriconnectedFinder():
             all_connected_components.append(connected_components)
             all_sep_pairs.append(sep_pairs)
         
-        return all_TCCs, all_relation_T, all_relation_R, all_connected_components, all_sep_pairs
+        info = {}
+        info["relation_T"] = all_relation_T
+        info["relation_R"] = all_relation_R
+        info["connected_components"] = all_connected_components
+        info["sep_pairs"] = all_sep_pairs
+        
+        return all_TCCs, info
 
 

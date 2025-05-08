@@ -16,6 +16,7 @@ from itertools import combinations
 import math
 
 import SAT2_solver
+import triconnected_components as TCC
 
 
 class PlanarityCriterion:  # TODO COMENTAR
@@ -223,7 +224,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             self, G, fundamental_cycles, bridges_all_cycles, edge_index_map, 
             implications
             ):
-        n_edges = len(edge_index_map)
+        n_edges = len(G.edges())
         n_cycles = len(fundamental_cycles)
         general_neg_offset = n_edges * n_cycles
         for c_index, c in enumerate(fundamental_cycles):
@@ -234,13 +235,14 @@ class PlanarityCriterion:  # TODO COMENTAR
                 for edge1, edge2 in combinations(bridge["edges"], 2): 
                     e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
                     # e1 -> e2
-                    implications.append((offset + edge1, offset + edge2))
+                    #print("a add up to", neg_offset + e2, neg_offset + e1, e2, e1) ### TODO PRINT QUITAR
+                    implications.append((offset + e1, offset + e2))
                     # e2 -> e1
-                    implications.append((offset + edge2, offset + edge1))
+                    implications.append((offset + e2, offset + e1))
                     # ¬e1 -> ¬e2
-                    implications.append((neg_offset + edge1, neg_offset + edge2))
+                    implications.append((neg_offset + e1, neg_offset + e2))
                     # ¬e2 -> ¬e1
-                    implications.append((neg_offset + edge2, neg_offset + edge1))
+                    implications.append((neg_offset + e2, neg_offset + e1))
                     
         return implications
 
@@ -256,24 +258,26 @@ class PlanarityCriterion:  # TODO COMENTAR
 
     def __update_cond_b(self, G, fundamental_cycles, edge_index_map, 
                         cycle_index_map, implications):
-        n_edges = len(edge_index_map)
+        n_edges = len(G.edges())
         n_cycles = len(fundamental_cycles)
         neg_offset = n_edges * n_cycles
         # TODO CHEQUEAR BIEN ESTA CONDICIÓN
         for cycle1, cycle2 in combinations(fundamental_cycles, 2):
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
-            c1 = cycle_index_map[cycle1]
-            c2 = cycle_index_map[cycle2]
+            c1 = cycle_index_map[tuple(cycle1)]
+            c2 = cycle_index_map[tuple(cycle2)]
             c1_not_c2 = [edge for edge in c1_edges if edge not in c2_edges]
             c2_not_c1 = [edge for edge in c2_edges if edge not in c1_edges]
             # print(c1,c1_edges,c2, c2_edges)###
             for edge1 in c1_not_c2:
                 for edge2 in c2_not_c1:
+                    e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
+                    #print("B add up to", neg_offset + c2*n_edges + e1, neg_offset + c1*n_edges + e2) ### TODO PRINT QUITAR
                     # e1c2 -> ¬e2c1
-                    implications.append((c2*n_edges + edge1, neg_offset + c1*n_edges + edge2))
+                    implications.append((c2*n_edges + e1, neg_offset + c1*n_edges + e2))
                     # e2c1 -> ¬e1c2
-                    implications.append((c1*n_edges + edge2, neg_offset + c2*n_edges + edge1))
+                    implications.append((c1*n_edges + e2, neg_offset + c2*n_edges + e1))
         return implications
 
     # Auxiliar functions for condition c)
@@ -352,7 +356,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             self, G, fundamental_cycles, bridges_all_cycles, edge_index_map,
             implications
             ):
-        n_edges = len(edge_index_map)
+        n_edges = len(G.edges())
         n_cycles = len(fundamental_cycles)
         general_neg_offset = n_edges * n_cycles 
         for c_index, c in enumerate(fundamental_cycles):
@@ -363,6 +367,7 @@ class PlanarityCriterion:  # TODO COMENTAR
                     for edge1 in bridge1["edges"]:
                         for edge2 in bridge2["edges"]:
                             e1, e2 = edge_index_map[edge1], edge_index_map[edge2] 
+                            #print("c add up to", neg_offset + e2, neg_offset + e1) ### TODO PRINT QUITAR
                             # e1 -> ¬e2
                             implications.append((offset + e1, neg_offset + e2))
                             # e2 -> ¬e1
@@ -385,7 +390,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             G, fundamental_cycles, bridges_all_cycles, edge_index_map, implications
             )
         
-        implications = self.update_cond_b(
+        implications = self.__update_cond_b(
             G, fundamental_cycles, edge_index_map, cycle_index_map, implications
             )
         
@@ -402,11 +407,13 @@ class PlanarityCriterion:  # TODO COMENTAR
         for i, edge in enumerate(G.edges()):
             edge_index_map[edge] = i
             # Store reversed edge as well ### TODO INTENTAR NO USAR ESTAS LÍNEAS
-            # edge_index_map[(edge[1], edge[0])] = i
+            edge_index_map[(edge[1], edge[0])] = i
             
-        cycle_index_map = {}
-        for i, c in enumerate(fundamental_cycles):
-            cycle_index_map[tuple(c)] = i
+            cycle_index_map = {}
+            index_cycle_map = {}
+            for i, c in enumerate(fundamental_cycles):
+                cycle_index_map[tuple(c)] = i  # tuple directly
+                index_cycle_map[i] = c  
                 
         ### TODO COMENTAR COMO FUNCIONA IMPLICATIONS
         # num_ciclo*num_edges + num_edge es variable positiva
@@ -420,10 +427,12 @@ class PlanarityCriterion:  # TODO COMENTAR
         results, info = solver.get_truth_assigment(implications, n_variables)
         info["edge_index_map"] = edge_index_map
         info["cycle_index_map"] = cycle_index_map
+        info["index_cycle_map"] = index_cycle_map
         return results, info 
         ## TODO IMPORT AND CALL 2CNF SOLVER
                 
-        
+        """        
+### FUNCIONES ANTIGUAS DE 2CNF PARA HACERLO CON LISTAS COMO EN EL PAPER CON LA CLASE DEL FINAL DEL ARCHIVO ###        
 #####################################################################################################################        
         
     ### Auxiliar functions for getting 2 CNF conditions ###
@@ -607,18 +616,19 @@ class PlanarityCriterion:  # TODO COMENTAR
                                        bridges_all_cycles, edge_index_map, 
                                        CNF_lists)
         return CNF_lists
+    """ 
     
-    def compute_lt(self, truth_assign, fundamental_cycles, info):
-        rel_lt = [[0 for _ in range(fundamental_cycles)] for _ in range(fundamental_cycles)]
-        rel_in = [[0 for _ in range(fundamental_cycles)] for _ in range(fundamental_cycles)]
+    def compute_lt(self, G, truth_assign, fundamental_cycles, info):
+        rel_lt = [[0 for _ in range(len(fundamental_cycles))] for _ in range(len(fundamental_cycles))]
+        rel_in = [[0 for _ in range(len(fundamental_cycles))] for _ in range(len(fundamental_cycles))]
         cycle_index_map = info["cycle_index_map"]
         edge_index_map = info["edge_index_map"]
         
         for cycle1, cycle2 in combinations(fundamental_cycles, 2):
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
-            c1 = cycle_index_map[cycle1]
-            c2 = cycle_index_map[cycle2]
+            c1 = cycle_index_map[tuple(cycle1)]
+            c2 = cycle_index_map[tuple(cycle2)]
             for edge in c1_edges:
                 if edge not in c2_edges:    
                     c1_not_c2 = edge_index_map[edge]
@@ -627,20 +637,20 @@ class PlanarityCriterion:  # TODO COMENTAR
                 if edge not in c1_edges:
                     c2_not_c1 = edge_index_map[edge]
                     break
-            if truth_assign[c2*len(edge_index_map) + c1_not_c2]:
+            if truth_assign[c2*len(G.edges()) + c1_not_c2]:
                 rel_in[c1][c2] = 1
-            if truth_assign[c1*len(edge_index_map) + c2_not_c1]:
+            if truth_assign[c1*len(G.edges()) + c2_not_c1]:
                 rel_in[c2][c1] = 1
                 
         for cycle1, cycle2 in combinations(fundamental_cycles, 2):
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
-            c1 = cycle_index_map[cycle1]
-            c2 = cycle_index_map[cycle2]
+            c1 = cycle_index_map[tuple(cycle1)]
+            c2 = cycle_index_map[tuple(cycle2)]
             if rel_lt[c1][c2]:
                 rel_lt[c1][c2] = 1
                 for cycle3 in fundamental_cycles:    
-                    c3 = cycle_index_map[cycle3]
+                    c3 = cycle_index_map[tuple(cycle3)]
                     if rel_lt[c1][c3] and rel_lt[c3][c2]:
                         rel_lt[c1][c2] = 0
                         break
@@ -651,19 +661,188 @@ class PlanarityCriterion:  # TODO COMENTAR
         return rel_lt, info
                
         
+    def __sum_cycles(self, edges1, edges2): ##################TODO TODO TODO TODO REVISAR ESTE ################################
+        """
+        Compute the symmetric difference between two cycles represented as lists of edges.
     
+        Parameters
+        ----------
+        edges1 : list of tuple
+            List of edges (each edge is a tuple of two vertices) representing the first cycle.
+        edges2 : list of tuple
+            List of edges (each edge is a tuple of two vertices) representing the second cycle.
     
-    def get_peripheral_basis(self, ):
-        pass
-    
-    
-    def get_plane_mesh(self,):
-        pass
-    
-    
-    def is_planar(self,):
-        pass
+        Returns
+        -------
+        list of tuple
+            A list of edges representing the symmetric difference of the two cycles.
+            These are the edges that appear in exactly one of the two input cycles.
+        """
 
+        set1 = set(edges1)
+        set2 = set(edges2)
+        return list(set1 ^ set2)  # edges in one or the other, but not both
+    
+    def __edges_to_cycle(self, edges):  ##################TODO TODO TODO TODO REVISAR ESTE ################################
+        """
+        Reconstruct a single simple cycle from a set of edges.
+    
+        Parameters
+        ----------
+        edges : iterable of tuple
+            A set or list of edges (each edge is a tuple of two vertices).
+    
+        Returns
+        -------
+        list
+            A list of vertices representing the reconstructed cycle.
+            The first vertex is repeated at the end to close the cycle.
+    
+        Raises
+        ------
+        ValueError
+            If the input edges do not form exactly one simple cycle.
+            This includes cases where:
+            - Some vertices do not have degree exactly 2.
+            - The edges form multiple disjoint cycles or an open path.
+            - The graph is not connected or has extra edges.
+        """
+        if not edges:
+            raise ValueError("No edges provided.")
+    
+        # Build adjacency map
+        adj = {}
+        for u, v in edges:
+            adj.setdefault(u, []).append(v)
+            adj.setdefault(v, []).append(u)
+    
+        # Check: every vertex in a simple cycle has degree exactly 2
+        for vertex, neighbors in adj.items():
+            if len(neighbors) != 2:
+                raise ValueError(f"Vertex {vertex} does not have degree 2; not a simple cycle.")
+    
+        # Reconstruct the cycle
+        start = next(iter(adj))
+        cycle = [start]
+        current = start
+        prev = None
+    
+        while True:
+            neighbors = adj[current]
+            # Choose the next neighbor that's not the previous vertex
+            next_vertex = neighbors[0] if neighbors[0] != prev else neighbors[1]
+            
+            if next_vertex == start:
+                break  # cycle closed
+    
+            cycle.append(next_vertex)
+            prev, current = current, next_vertex
+    
+        cycle.append(start)  # close the cycle
+    
+        # Validate: have we visited all edges?
+        if len(cycle) - 1 != len(edges):
+            raise ValueError("Edges do not form a single cycle (multiple components or extra edges).")
+    
+        return cycle
+
+    
+    def get_peripheral_basis(self, rel_lt, fundamental_cycles, info):
+        periph_basis_lists = []
+        periph_basis_edges = []
+        cycle_index_map = info["cycle_index_map"]
+        index_cycle_map = info["index_cycle_map"]
+        for cycle1 in fundamental_cycles:
+            periph_cycle = self.__get_edges_cycle(cycle1)
+            c1 = cycle_index_map[tuple(cycle1)]
+            for c2 in range(len(fundamental_cycles)):
+                if rel_lt[c2][c1]:
+                    cycle2 = self.__get_edges_cycle(index_cycle_map[c2])
+                    periph_cycle = self.__sum_cycles(periph_cycle, cycle2)
+            periph_basis_lists.append(self.__edges_to_cycle(periph_cycle))
+            periph_basis_edges.append(self.__edges_to_cycle(periph_cycle))
+        info["periph_basis_lists"] = periph_basis_lists 
+        return periph_basis_edges, info
+    
+    
+    def get_plane_mesh(self, periph_basis_edges):
+        outer_cycle =  []
+        for cycle in periph_basis_edges:
+            outer_cycle = self.__sum_cycles(outer_cycle, cycle)
+        plane_mesh = periph_basis_edges
+        plane_mesh.append(outer_cycle)
+        return plane_mesh
+    
+    
+    def is_planar(self, G):
+        finder = TCC.TriconnectedFinder()
+        TCCs, info = finder.triconnected_comps(G)
+        #print("TCCs", TCCs) ### TODO PRINT QUITAR 
+        #print(info) ### TODO PRINT QUITAR 
+        for tcc_list in TCCs:
+            #print("tcc list", tcc_list)
+            # Extract the subgraph
+            tcc = G.subgraph(tcc_list["node_list"]).copy()
+            
+            #print("nodos subgrafo:", tcc.nodes()) ### TODO PRINT QUITAR 
+            #print("edges subgrafo:", tcc.edges())  ### TODO PRINT QUITAR 
+         
+            # Add virtual edges
+            tcc.add_edges_from(tcc_list["virtual_edges"])
+            
+            spanning_tree = self.spanning_tree(tcc)
+            
+            fundamental_cycles = self.fundamental_cycles(tcc, spanning_tree)
+            
+            bridges = self.get_bridges(tcc, fundamental_cycles)
+            
+            truth_assign, info = self.get_truth_assigment(
+                tcc, fundamental_cycles, bridges
+                )
+            
+            if truth_assign is None:
+                info["failing tcc"] = tcc
+                print("false por no existir truth assigment") ### TODO PRINT QUITAR 
+                return False, info
+            
+            rel_lt, info = self.compute_lt(
+                tcc, truth_assign, fundamental_cycles, info
+                )
+            
+            peripheral_basis, info = self.get_peripheral_basis(
+                rel_lt, fundamental_cycles, info
+                )     
+    
+            plane_mesh = self.get_plane_mesh(peripheral_basis)
+            
+            edges_count = {edge: 0 for edge in tcc.edges()}
+            #print(edges_count)  ### TODO PRINT QUITAR
+            for cycle in plane_mesh:
+                for edge in self.__get_edges_cycle(cycle):
+                    if edge in edges_count:
+                        edges_count[edge] += 1
+                    elif (edge[1], edge[0]) in edges_count:
+                        edges_count[(edge[1], edge[0])] += 1
+                    else: 
+                        #print(cycle)  ### TODO PRINT QUITAR ### TODO REVISAR ESTO BIEN CON EL PAPER
+                        print("false por edge de ciclo malo") ### TODO PRINT QUITAR 
+                        return False, info
+                    
+            for edge, count in edges_count.items():
+                if count != 2:
+                    info["failing tcc"] = tcc
+                    info["failing edge"] = edge
+                    print("false por plane mesh mala") ### TODO PRINT QUITAR 
+                    return False, info
+        return True, info
+    
+    
+########################################################################################################################################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
 ### TODO HAY AQUÍ UN PRINTER QUE FALTA POR PONER de cnf_lists_by_cycle
 
 class CNF2Solver:
