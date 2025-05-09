@@ -11,7 +11,7 @@ import random
 from collections import deque
 
 
-from itertools import combinations
+from itertools import combinations, permutations
 
 import math
 
@@ -362,7 +362,7 @@ class PlanarityCriterion:  # TODO COMENTAR
         for c_index, c in enumerate(fundamental_cycles):
             offset = c_index * n_edges
             neg_offset = general_neg_offset + c_index * n_edges
-            for bridge1, bridge2 in combinations(bridges_all_cycles[tuple(c)], 2):
+            for bridge1, bridge2 in combinations(bridges_all_cycles[tuple(c)], 2): ### TODO PENSAR SI ES COMBINATIONS O PERMUTATIONS
                 if self.__conflict_between((bridge1, bridge2), c):
                     # print("ciclo", c, "conflicto entre", bridge1, bridge2)### TODO PRINT QUITAR
                     for edge1 in bridge1["edges"]:
@@ -628,7 +628,7 @@ class PlanarityCriterion:  # TODO COMENTAR
         cycle_index_map = info["cycle_index_map"]
         edge_index_map = info["edge_index_map"]
         
-        for cycle1, cycle2 in combinations(fundamental_cycles, 2):
+        for cycle1, cycle2 in combinations(fundamental_cycles, 2): ### TODO PENSAR SI ES COMBINATIONS O PERMUTATIONS
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
             c1 = cycle_index_map[tuple(cycle1)]
@@ -645,17 +645,21 @@ class PlanarityCriterion:  # TODO COMENTAR
                 rel_in[c1][c2] = 1
             if truth_assign[c1*len(G.edges()) + c2_not_c1]:
                 rel_in[c2][c1] = 1
-                
-        for cycle1, cycle2 in combinations(fundamental_cycles, 2):
+        
+        # print("posibles lts", rel_in) ### TODO PRINT QUITAR
+        for cycle1, cycle2 in permutations(fundamental_cycles, 2): ### TODO SEGURAMENTE ES MEJOR CON COMBINATIONS Y PROBANDO EN DISTINTO ORDEN
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
             c1 = cycle_index_map[tuple(cycle1)]
             c2 = cycle_index_map[tuple(cycle2)]
-            if rel_in[c1][c2]:
+            # print("examinando", c1, c2, cycle1, cycle2, rel_in[c1][c2])### TODO PRINT QUITAR
+            if rel_in[c1][c2]: # if its value is 1
+                # print("posible lt", c1, c2, cycle1, cycle2)### TODO PRINT QUITAR
                 rel_lt[c1][c2] = 1
                 for cycle3 in fundamental_cycles:    
                     c3 = cycle_index_map[tuple(cycle3)]
                     if rel_in[c1][c3] and rel_in[c3][c2]:
+                        # print(c1, c3, c3)  ### TODO PRINT QUITAR
                         rel_lt[c1][c2] = 0
                         break
                     if rel_lt[c1][c2] == 0:
@@ -849,8 +853,8 @@ class PlanarityCriterion:  # TODO COMENTAR
                     #print(bridges)
                     #print("edge map", info["edge_index_map"])
                     #print("cycle map", info["cycle_index_map"])
-                    #print("REL IN", info["rel_in"])
-                    #print("rel lt", rel_lt)
+                    # print("REL IN", info["rel_in"])
+                    # print("rel lt", rel_lt)
                     #print( fundamental_cycles)### TODO PRINT QUITAR 
                     # print("periph basis", peripheral_basis)### TODO PRINT QUITAR 
                     # print("plane mesh", plane_mesh)### TODO PRINT QUITAR 
@@ -861,7 +865,10 @@ class PlanarityCriterion:  # TODO COMENTAR
         info["edges_count"] = edges_count
         return True, info
     
-    
+   
+"""   
+   
+   
 ########################################################################################################################################################################
 ########################################################################################################################################################################
 ########################################################################################################################################################################
@@ -869,6 +876,10 @@ class PlanarityCriterion:  # TODO COMENTAR
 ########################################################################################################################################################################
 ########################################################################################################################################################################
 ### TODO HAY AQUÍ UN PRINTER QUE FALTA POR PONER de cnf_lists_by_cycle
+
+
+#### CLASS CNF SOLVER ANTIGUA PARA USAR CON LAS LISTAS ########################
+
 
 class CNF2Solver:
     
@@ -941,8 +952,21 @@ class CNF2Solver:
         ### TODO DEMOSTRAR SI SE PUEDE HACER CON UNA ÚNICA LISTA Y SI SE PUEDE, 
         ### REFERENCIAR EN LOS COMENTARIOS.
         pass
-    
-    
+     
+########################################################################################################################################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
+#####################################################################################################   
+ 
+
+
+
+"""
+
+
+   
 """
 
 ### TODO IR TRASPASANDO SIGUIENTES PASOS
