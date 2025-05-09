@@ -6,6 +6,25 @@ Created on Wed May  7 13:58:52 2025
 """
 import math
 
+"""
+def print_matrix(matrix, name):
+    print(f"\n{name}:")
+    for row in matrix:
+        print(' '.join(f"{'-' if elem == float('-inf') else elem:2}" for elem in row))
+"""        
+def print_matrix(matrix, name):
+    n = len(matrix)
+    print(f"\n{name}:")
+
+    # Print column headers
+    header = "   " + ' '.join(f"{j:2}" for j in range(n))
+    print(header)
+
+    # Print each row with its index
+    for i, row in enumerate(matrix):
+        row_str = f"{i:2}|" + ' '.join(f"{'-' if elem == float('-inf') else f'{elem:2}'}" for elem in row)
+        print(row_str)
+
 
 class SAT2_solver:
         
@@ -85,7 +104,7 @@ class SAT2_solver:
 
     def __negated_same_str_component(self, A1, n_variables, n_variable):
         n_negated_variable = n_variables + n_variable
-        return ((A1[n_variable][n_variables] == 1) and (A1[n_variables][n_variable] == 1))
+        return ((A1[n_variable][n_negated_variable] == 1) and (A1[n_negated_variable][n_variable] == 1))
             
         
         
@@ -155,26 +174,72 @@ class SAT2_solver:
     def is_solvable(self, implications, n_variables):
         adj_matrix = self.init_transitive_closure(implications, n_variables)
         A1 = adj_matrix ## TODO CHEQUEAR SI EL +1 DE ABAJO ESTÁ BIEN
+        print_matrix(A1, "A1 inicial") ### TODO PRINT QUITAR
         for _ in range(int(math.log2(n_variables * 2)) + 1): # 2*n_variables because we take the negated variables as well
             A1 = self.mult_matrix_or_and(A1, A1)
+        print_matrix(A1, "A1 final") ### TODO PRINT QUITAR
         for n_variable in range(n_variables):
             if self.__negated_same_str_component(A1, n_variables, n_variable):
                 return False, A1
         return True, A1
-    
+
     def get_truth_assigment(self, implications, n_variables):
         solvable, A1 = self.is_solvable(implications, n_variables)
         if not solvable:    
             info = {"A1" : A1, "B1" : None}
             return None, info
         B1 = self.init_longest_paths(implications, A1) ### TODO VER SI implications SON NECESARIAS, CREO Q NO
+        print_matrix(B1, "B1 inicial") ### TODO PRINT QUITAR
         for _ in range(int(math.log2(n_variables * 2)) + 1):## TODO CHEQUEAR SI EL +1  ESTÁ BIEN
             B1 = self.mult_matrix_max_plus(B1, B1)
         results = []
+        print("++++++++++++++++++++++++++++") ### TODO PRINT QUITAR TODO ESTO
+        
+        
+        
+        """"
         for n_variable in range(n_variables):
             # Each variable is true ifff its longest path to a sink is lower 
             # than the longest path to a sink of the negated variable. 
+            print(n_variable, max(B1[n_variable]), max(B1[n_variables + n_variable]))
+            print(max(B1[n_variable]) <= max(B1[n_variables + n_variable]))
             results.append(max(B1[n_variable]) <= max(B1[n_variables + n_variable]))
-        info = {"A1" : A1, "B1" : B1}
+        """
+
+        def compute_s_vector(A1): #### TODO TODO REVISAR BIEN ESTE PÁRRAFO QUE SUSTITUYE AL PARRAFO ANTERIOR
+            n = len(A1)
+            s = [None] * n
+            for y in range(n):
+                same_component = [z for z in range(n) if A1[y][z] == 1 and A1[z][y] == 1]
+                s[y] = min(same_component)
+            return s    
+        s = compute_s_vector(A1)
+        for n_variable in range(n_variables):
+            fy = max(B1[n_variable])
+            f_not_y = max(B1[n_variables + n_variable])
+        
+            if fy < f_not_y:
+                results.append(True)
+            elif fy > f_not_y:
+                results.append(False)
+            else:
+                # empate: decide usando s(y)
+                s_y = s[n_variable]
+                s_not_y = s[n_variables + n_variable]
+                results.append(s_y < s_not_y)
+                
+                
+                
+                
+                
+                
+            
+        print("++++++++++++++++++++++++++++") ### TODO PRINT QUITAR TODO ESTO
+        info = {"A1" : A1, "B1" : B1, "implications": implications}
+        print("-----------------------------------------\n-----------------------------------------")
+        #print("A1", A1)
+        #print("B1", B1) ### TODO PRINT QUITAR TODO ESTO
+        print_matrix(B1, "B1 final")### TODO PRINT QUITAR TODO ESTO
+        print("-----------------------------------------\n-----------------------------------------")
         return results, info
                 

@@ -93,6 +93,27 @@ class Printer:
                     print(f"    NP_c,e (Negative-Positive): {cnf_conditions[2]}")
                     print(f"    NN_c,e (Negative-Negative): {cnf_conditions[3]}")
             print("-" * 50)
+            
+    def print_cycle_edge_table(boolean_list, edge_map, cycle_map):
+        # Get the number of edges (columns) and cycles (rows)
+        num_edges = len(set(edge_map.values()))
+        num_cycles = len(cycle_map)
+    
+        # Invert cycle_map to get row index to cycle mapping
+        cycle_indices = {v: k for k, v in cycle_map.items()}
+        edge_indices = {v: k for k, v in edge_map.items() if v in set(edge_map.values())}
+    
+        # Print header
+        header = "Cycle/Edge".ljust(15) + ''.join(f"{str(edge_indices[col]).ljust(15)}" for col in range(num_edges))
+        print(header)
+        print('-' * len(header))
+    
+        # Print each row
+        for row in range(num_cycles):
+            cycle = str(cycle_indices[row])
+            row_values = boolean_list[row * num_edges : (row + 1) * num_edges]
+            row_str = cycle.ljust(15) + ''.join(f"{str(val).ljust(15)}" for val in row_values)
+            print(row_str)
 
 ### TODO UTILIZAR ESTA CLASE EN LUGAR DE LA DE TRICOMPONENTS EN LOS EJEMPLOS
 class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER MÁS DE UNA CLASE EN EL MISMO ARCHIVO O DEBEN ESTAR EN ARCHIVOS SEPARADOS. 
@@ -111,9 +132,8 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
         # Assign nodes and edges to their NCCs
         for class_idx, component in enumerate(NCC):
             if N == 3:
-                print(component, NCC)
-                nodes = component["node list"]
-                virt_edges = component["virtual edges"]
+                nodes = component["node_list"]
+                virt_edges = component["virtual_edges"]
             else:
                 nodes = component
                 virt_edges = []
@@ -194,7 +214,7 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
         formatted_ncc_list = []
         for i, component in enumerate(NCC):
             if N == 3:
-                comp_nodes = sorted(list(component["node list"]))
+                comp_nodes = sorted(list(component["node_list"]))
                 comp_str = f"{N_label}CC {i+1}: {comp_nodes}"
             else:
                 comp_str = f"{N_label}CC {i+1}: {sorted(list(component))}"
