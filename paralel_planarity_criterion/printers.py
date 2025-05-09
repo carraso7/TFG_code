@@ -103,16 +103,31 @@ class Printer:
         cycle_indices = {v: k for k, v in cycle_map.items()}
         edge_indices = {v: k for k, v in edge_map.items() if v in set(edge_map.values())}
     
+        # Prepare column widths based on edge tuple lengths
+        col_widths = []
+        for col in range(num_edges):
+            edge_label = str(edge_indices[col])
+            col_widths.append(len(edge_label) + 2)  # +2 for padding
+    
+        # Determine max width for the first column based on the longest cycle label
+        max_cycle_len = max(len(str(cycle_indices[row])) for row in range(num_cycles))
+        first_col_width = max(max_cycle_len, len("Cycle/Edge")) + 2  # Add padding
+    
         # Print header
-        header = "Cycle/Edge".ljust(15) + ''.join(f"{str(edge_indices[col]).ljust(15)}" for col in range(num_edges))
+        header = "Cycle/Edge".ljust(first_col_width)
+        for col in range(num_edges):
+            edge_label = str(edge_indices[col])
+            header += edge_label.ljust(col_widths[col])
         print(header)
         print('-' * len(header))
     
         # Print each row
         for row in range(num_cycles):
             cycle = str(cycle_indices[row])
-            row_values = boolean_list[row * num_edges : (row + 1) * num_edges]
-            row_str = cycle.ljust(15) + ''.join(f"{str(val).ljust(15)}" for val in row_values)
+            row_values = boolean_list[row * num_edges: (row + 1) * num_edges]
+            row_str = cycle.ljust(first_col_width)
+            for col, val in enumerate(row_values):
+                row_str += ('True' if val else 'False').ljust(col_widths[col])
             print(row_str)
 
 ### TODO UTILIZAR ESTA CLASE EN LUGAR DE LA DE TRICOMPONENTS EN LOS EJEMPLOS

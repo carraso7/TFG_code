@@ -174,10 +174,10 @@ class SAT2_solver:
     def is_solvable(self, implications, n_variables):
         adj_matrix = self.init_transitive_closure(implications, n_variables)
         A1 = adj_matrix ## TODO CHEQUEAR SI EL +1 DE ABAJO ESTÁ BIEN
-        print_matrix(A1, "A1 inicial") ### TODO PRINT QUITAR
+        # print_matrix(A1, "A1 inicial") ### TODO PRINT QUITAR
         for _ in range(int(math.log2(n_variables * 2)) + 1): # 2*n_variables because we take the negated variables as well
             A1 = self.mult_matrix_or_and(A1, A1)
-        print_matrix(A1, "A1 final") ### TODO PRINT QUITAR
+        # print_matrix(A1, "A1 final") ### TODO PRINT QUITAR
         for n_variable in range(n_variables):
             if self.__negated_same_str_component(A1, n_variables, n_variable):
                 return False, A1
@@ -189,11 +189,11 @@ class SAT2_solver:
             info = {"A1" : A1, "B1" : None}
             return None, info
         B1 = self.init_longest_paths(implications, A1) ### TODO VER SI implications SON NECESARIAS, CREO Q NO
-        print_matrix(B1, "B1 inicial") ### TODO PRINT QUITAR
+        # print_matrix(B1, "B1 inicial") ### TODO PRINT QUITAR
         for _ in range(int(math.log2(n_variables * 2)) + 1):## TODO CHEQUEAR SI EL +1  ESTÁ BIEN
             B1 = self.mult_matrix_max_plus(B1, B1)
         results = []
-        print("++++++++++++++++++++++++++++") ### TODO PRINT QUITAR TODO ESTO
+        # print("++++++++++++++++++++++++++++") ### TODO PRINT QUITAR TODO ESTO
         
         
         
@@ -234,12 +234,12 @@ class SAT2_solver:
                 
                 
             
-        print("++++++++++++++++++++++++++++") ### TODO PRINT QUITAR TODO ESTO
+        # print("++++++++++++++++++++++++++++") ### TODO PRINT QUITAR TODO ESTO
         info = {"A1" : A1, "B1" : B1, "implications": implications}
-        print("-----------------------------------------\n-----------------------------------------")
+        # print("-----------------------------------------\n-----------------------------------------")
         #print("A1", A1)
         #print("B1", B1) ### TODO PRINT QUITAR TODO ESTO
-        print_matrix(B1, "B1 final")### TODO PRINT QUITAR TODO ESTO
-        print("-----------------------------------------\n-----------------------------------------")
+        # print_matrix(B1, "B1 final")### TODO PRINT QUITAR TODO ESTO
+        # print("-----------------------------------------\n-----------------------------------------")
         return results, info
                 

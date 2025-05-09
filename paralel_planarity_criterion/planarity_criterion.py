@@ -364,7 +364,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             neg_offset = general_neg_offset + c_index * n_edges
             for bridge1, bridge2 in combinations(bridges_all_cycles[tuple(c)], 2):
                 if self.__conflict_between((bridge1, bridge2), c):
-                    print("ciclo", c, "conflicto entre", bridge1, bridge2)
+                    # print("ciclo", c, "conflicto entre", bridge1, bridge2)### TODO PRINT QUITAR
                     for edge1 in bridge1["edges"]:
                         for edge2 in bridge2["edges"]:
                             e1, e2 = edge_index_map[edge1], edge_index_map[edge2] 
@@ -391,12 +391,12 @@ class PlanarityCriterion:  # TODO COMENTAR
             G, fundamental_cycles, bridges_all_cycles, edge_index_map, implications
             )
         
-        print("imp 1", implications) ### TODO PRINT QUITAR
+        #print("imp 1", implications) ### TODO PRINT QUITAR
         implications = self.__update_cond_b(
             G, fundamental_cycles, edge_index_map, cycle_index_map, implications
             )
         
-        print("imp 2", implications) ### TODO PRINT QUITAR
+        #print("imp 2", implications) ### TODO PRINT QUITAR
         implications = self.__update_cond_c(
             G, fundamental_cycles, bridges_all_cycles, edge_index_map, implications
             )
@@ -427,7 +427,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             )
         solver = SAT2_solver.SAT2_solver()
         n_variables = len(fundamental_cycles) * len(G.edges())
-        print(n_variables)###TODO PRINT QUITAR
+        #print(n_variables)###TODO PRINT QUITAR
         results, info = solver.get_truth_assigment(implications, n_variables)
         info["edge_index_map"] = edge_index_map
         info["cycle_index_map"] = cycle_index_map
@@ -758,7 +758,7 @@ class PlanarityCriterion:  # TODO COMENTAR
         index_cycle_map = info["index_cycle_map"]
         for cycle1 in fundamental_cycles:
             periph_cycle = self.__get_edges_cycle(cycle1)
-            print("original", periph_cycle) ### TODO PRINT QUIITAR
+            #print("original", periph_cycle) ### TODO PRINT QUIITAR
             c1 = cycle_index_map[tuple(cycle1)]
             for c2 in range(len(fundamental_cycles)):
                 if rel_lt[c2][c1]:
@@ -766,13 +766,13 @@ class PlanarityCriterion:  # TODO COMENTAR
                     periph_cycle = self.__sum_cycles(periph_cycle, cycle2)
             periph_basis_lists.append(self.__edges_to_cycle(periph_cycle))
             periph_basis_edges.append(periph_cycle)
-            print("final:", periph_cycle) ### TODO PRINT QUIITAR
+            #print("final:", periph_cycle) ### TODO PRINT QUIITAR
         info["periph_basis_lists"] = periph_basis_lists 
         return periph_basis_edges, info
     
     
     def get_plane_mesh(self, periph_basis_edges):
-        print(periph_basis_edges) ### todo print quitar
+        #print(periph_basis_edges) ### todo print quitar
         outer_cycle =  []
         for cycle in periph_basis_edges:
             outer_cycle = self.__sum_cycles(outer_cycle, cycle)
@@ -791,8 +791,8 @@ class PlanarityCriterion:  # TODO COMENTAR
             # Extract the subgraph
             tcc = G.subgraph(tcc_list["node_list"]).copy()
             
-            print("nodos subgrafo:", tcc.nodes()) ### TODO PRINT QUITAR 
-            print("edges subgrafo:", tcc.edges())  ### TODO PRINT QUITAR 
+            #print("nodos subgrafo:", tcc.nodes()) ### TODO PRINT QUITAR 
+            #print("edges subgrafo:", tcc.edges())  ### TODO PRINT QUITAR 
          
             # Add virtual edges
             tcc.add_edges_from(tcc_list["virtual_edges"])
@@ -811,7 +811,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             if truth_assign is None:
                 info["failing tcc"] = tcc
                 print("false por no existir truth assigment") ### TODO PRINT QUITAR 
-                print("\n\nCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
+                #print("\n\nCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
                 return False, info
             
             rel_lt, info = self.compute_lt(
@@ -837,7 +837,7 @@ class PlanarityCriterion:  # TODO COMENTAR
                     else: 
                         #print(cycle)  ### TODO PRINT QUITAR ### TODO REVISAR ESTO BIEN CON EL PAPER
                         print("false por edge de ciclo malo") ### TODO PRINT QUITAR 
-                        print("\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
+                        #print("\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
                         return False, info
                     
             for edge, count in edges_count.items():
@@ -845,18 +845,18 @@ class PlanarityCriterion:  # TODO COMENTAR
                     info["failing tcc"] = tcc
                     info["failing edge"] = edge
                     info["edges_count"] = edges_count
-                    print("implications", info["implications"])
-                    print(bridges)
-                    print("edge map", info["edge_index_map"])
-                    print("cycle map", info["cycle_index_map"])
-                    print("REL IN", info["rel_in"])
-                    print("rel lt", rel_lt)
-                    print( fundamental_cycles)### TODO PRINT QUITAR 
-                    print("periph basis", peripheral_basis)### TODO PRINT QUITAR 
-                    print("plane mesh", plane_mesh)### TODO PRINT QUITAR 
-                    print(edges_count)### TODO PRINT QUITAR 
+                    #print("implications", info["implications"])
+                    #print(bridges)
+                    #print("edge map", info["edge_index_map"])
+                    #print("cycle map", info["cycle_index_map"])
+                    #print("REL IN", info["rel_in"])
+                    #print("rel lt", rel_lt)
+                    #print( fundamental_cycles)### TODO PRINT QUITAR 
+                    # print("periph basis", peripheral_basis)### TODO PRINT QUITAR 
+                    # print("plane mesh", plane_mesh)### TODO PRINT QUITAR 
+                    # print(edges_count)### TODO PRINT QUITAR 
                     print("false por plane mesh mala") ### TODO PRINT QUITAR 
-                    print("\n\nBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
+                    #print("\n\nBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
                     return False, info
         info["edges_count"] = edges_count
         return True, info
