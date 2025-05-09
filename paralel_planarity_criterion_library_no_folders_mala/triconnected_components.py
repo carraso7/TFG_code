@@ -2,7 +2,7 @@
 """
 Created on Thu Mar 20 14:33:45 2025
 
-@author: carlo
+@author: carlos
 """
 ### TODO VER SI SOBRA ALGÚN IMPORT
 import networkx as nx
@@ -10,9 +10,10 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from itertools import combinations
 
-class Triconnected_finder():
+class TriconnectedFinder():
     
-    def __find_sep_pairs(G):
+    
+    def __find_sep_pairs(self, G): # TODO VER SI SON DOS LÍNEAS AL FINAL TBN EN MÉTODOS PRIVADOS
         """
         Finds and returns all separation pairs of graph G
         
@@ -35,7 +36,8 @@ class Triconnected_finder():
                 sep_pairs.append(sp)
         return sep_pairs
     
-    def __find_connected_components(G, sep_pairs):
+    
+    def __find_connected_components(self, G, sep_pairs):
         """
         For each separation pair, labels all the nodes depending
         on the component they belong when deleting the separation pair
@@ -67,7 +69,8 @@ class Triconnected_finder():
             connected_components[sep_pair] = component_labels
         return connected_components
     
-    def __find_relation_R(G, connected_components):
+    
+    def __find_relation_R(self, G, connected_components):
         """
         Finds the relation R described in the paper for each pair of nodes in 
         graph `G`. ### TODO INCLUIR REFERENCIA PAPER
@@ -108,7 +111,7 @@ class Triconnected_finder():
         return relation_R
     
     
-    def __find_relation_T(G, relation_R):
+    def __find_relation_T(self, G, relation_R):
         """
         Find relation T described in the paper for graph G.  ### TODO escribir referencia paper
 
@@ -135,7 +138,8 @@ class Triconnected_finder():
                 relation_T.append(trio)
         return relation_T
     
-    def __find_triply_connected_from_T_R(G, rel_T, rel_R):
+    
+    def __find_triply_connected_from_T_R(self, G, rel_T, rel_R, sep_pairs):
         """
         Function to find triply connected components from relations T and R of 
         graph ´G´
@@ -152,23 +156,39 @@ class Triconnected_finder():
         Returns
         -------
         list
-            List of frozensets. Each set represents the nodes of a triconnected
-            component of ´G´.
-
+            List of dictionaries with two entries. 'node list' and 
+            'virtual edges'. Each dictionary represents a triconnected block
+            with all its nodes in node list and its virtual edges in 
+            'virtual edges'. Virtual edges are edges of the TCC not in G
         """
+        #print(sep_pairs)### todo quitar
         node_index = {node: i for i, node in enumerate(G.nodes)}
         triply_components = []
         for rel_T_elem in rel_T:
-            triply_component = list(rel_T_elem)
+            ### TODO IGUAL ES MÁS FÁCIL ITERAR POR LOS SEP PAIR A TRAVÉS DE CADA TCC ENCONTRADA
+            triply_component = list(rel_T_elem) ### TODO AQUÍ REVISAR SI TIENE DENTRO UN SEP PAIR Y EN TAL CASO QUIZÁ AÑADIR UN GHOST EDGE
             for node in G.nodes:
                 if rel_R[node_index[rel_T_elem[0]]][node_index[node]] and rel_R[node_index[rel_T_elem[1]]][node_index[node]] and rel_R[node_index[rel_T_elem[2]]][node_index[node]]:
-                    triply_component.append(node)
+                    triply_component.append(node) ### TODO CADA VEZ QUE SE AÑADE UNO, VER SI FORMA PARTE DE UN SEP PAIR Y, EN TAL CASO, SI TAMBIÉN ESTÁ EL OTRO
             triply_components.append(triply_component)
-        return list(set(frozenset(comp) for comp in triply_components))
+        TCCs_lists = list(set(frozenset(comp) for comp in triply_components))
+        TCCs = []
+        for tcc_list in TCCs_lists:
+            tcc = {"node_list": tcc_list, "virtual_edges": []}
+            for sep_pair in sep_pairs:
+                #if (sep_pair == (4, 2)) or (sep_pair == (2, 4)):
+                    # print(G.nodes())### todo quitar
+                    # print((sep_pair[0] in tcc_list), (sep_pair[1] in tcc_list), (sep_pair not in G.edges()))### todo quitar
+                if (sep_pair[0] in tcc_list) and (sep_pair[1] in tcc_list) and (sep_pair not in G.edges()):  ### TODO VER SI SEP_PAIR TIENE FORMATO CORRECTO
+                    tcc["virtual_edges"].append(sep_pair)    
+            TCCs.append(tcc)
+            # print(tcc)  ### todo quitar
+        # print(TCCs) ### todo quitar
+        return TCCs ### TODO CAMBIAR ESTE TIPO DE SALIDA EN EL PRINTER Y TRATAR VIRTUAL EDGES
     
-    def find_triply_connected_comps(G):
+    def triconnected_comps(self, G):
         """
-        TODO: - RENOMBRARR COMO BICONNECTED COMPS Y CAMBIAR EN EL RESTO Y CAMBIAR RETURN CON INFO
+        TODO: - CAMBIAR RETURN CON INFO
               - CREAR UN MÉTODO QUE TAMBIÉN DEVUELVA LA INFO Y OTRO QUE NO???
         Parameters
         ----------
@@ -177,20 +197,30 @@ class Triconnected_finder():
 
         Returns
         -------
-        TCCs : list
-            List of frozensets. Each set represents the nodes of a triconnected
-            component of ´G´.
-        all_relation_T : TYPE
-            DESCRIPTION.
-        all_relation_R : TYPE
-            DESCRIPTION.
-        all_connected_components : TYPE
-            DESCRIPTION.
-        all_sep_pairs : TYPE
-            DESCRIPTION.
+        TCCs : list            
+            List of dictionaries with two entries. 'node list' and 
+            'virtual edges'. Each dictionary represents a triconnected block
+            with all its nodes in node list and its virtual edges in 
+            'virtual edges'. Virtual edges are edges of the TCC not in G
+        all_relation_T : list of lists of tuples of length 3
+            One list for each biconnected component containing all the 
+            elements of the relation T of that component represented by
+            a tuple of three nodes.
+        all_relation_R : list of n*n list matrices of booleans
+            One list matrix for each biconnected component. Each matrix 
+            represents the relation R between all the nodes, true if they are 
+            related and false otherwise. The matrix is symmetric. 
+        all_connected_components : list of dictionaries
+            One dictionary for each biconnected component. The keys of the 
+            dictionary are the separation pairs and the value is a dictionary
+            with all the nodes labeled depending on their connected components
+            on the graph taking out the separation pair. 
+        all_sep_pairs : list of list of tuples of length 2
+            One list for each biconnected component. The list contains all of
+            the separation pairs.
 
         """
-        TCCs = []
+        all_TCCs = []
         all_relation_T = []
         all_relation_R = []
         all_connected_components = []
@@ -207,16 +237,20 @@ class Triconnected_finder():
             connected_components = self.__find_connected_components(subgraph, sep_pairs)
             relation_R = self.__find_relation_R(subgraph, connected_components)
             relation_T = self.__find_relation_T(subgraph, relation_R)
-            TCC = self.__find_triply_connected_from_T_R(subgraph, relation_T, relation_R)
+            TCCs = self.__find_triply_connected_from_T_R(subgraph, relation_T, relation_R, sep_pairs)
             
-            TCCs.extend(TCC)
+            all_TCCs.extend(TCCs)
             all_relation_T.append(relation_T)
             all_relation_R.append(relation_R)
             all_connected_components.append(connected_components)
             all_sep_pairs.append(sep_pairs)
         
-        return TCCs, all_relation_T, all_relation_R, all_connected_components, all_sep_pairs
+        info = {}
+        info["relation_T"] = all_relation_T
+        info["relation_R"] = all_relation_R
+        info["connected_components"] = all_connected_components
+        info["sep_pairs"] = all_sep_pairs
+        
+        return all_TCCs, info
 
 
-class connected_components_drawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER MÁS DE UNA CLASE EN EL MISMO ARCHIVO O DEBEN ESTAR EN ARCHIVOS SEPARADOS. 
-### TODO ESCRIBIR A NETWORKX PARA VER SI QUIEREN MI LIBRERÍA
