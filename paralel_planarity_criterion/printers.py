@@ -5,9 +5,13 @@ import textwrap
 import matplotlib.cm as cm
 import numpy as np
 
+import os
+
 class Printer:
     
-    def print_spanning_tree(self, G, spanning_tree):
+    def print_spanning_tree(self, G, spanning_tree, save=False, 
+                            name="spanning tree", dir_name="images"
+                            ):
         """Plot the original graph and highlight the undirected spanning tree edges."""
         
         pos = nx.spring_layout(G)  # Compute layout for nodes
@@ -33,10 +37,18 @@ class Printer:
         subtitle = f"Spanning Tree Edges: {spanning_tree_edges}"
         plt.figtext(0.5, 0.05, subtitle, wrap=True, horizontalalignment='center', fontsize=10)
         
+        if save:
+            os.makedirs(dir_name, exist_ok=True)
+    
+            # Set the save path (always PNG)
+            save_path = os.path.join('images', f'{name}.png')
+            plt.savefig(save_path, bbox_inches='tight')
+        
         plt.show()
         
 
-    def draw_cycle_and_bridges(self, G, bridges_all_cycles, cycle):
+    def draw_cycle_and_bridges(self, G, bridges_all_cycles, cycle, save=False, 
+                            name="cycle and bridges", dir_name="images"):
         bridges = bridges_all_cycles.get(tuple(cycle), [])
         if not bridges:
             print(f"No bridges found for cycle: {cycle}")
@@ -68,13 +80,24 @@ class Printer:
         nx.draw_networkx_edges(G_no_c_edges, pos, ax=axes[1], edge_color="black")
         for bridge, color in zip(bridges, colors):
             nx.draw_networkx_edges(G_no_c_edges, pos, edgelist=bridge["edges"], edge_color=[color], ax=axes[1], width=2)
-
+        
+        if save:
+            os.makedirs(dir_name, exist_ok=True)
+    
+            # Set the save path (always PNG)
+            save_path = os.path.join('images', f'{name}.png')
+            plt.savefig(save_path, bbox_inches='tight')
+            
         plt.show()
 
     
-    def print_bridges(self, G, bridges_all_cycles):
-        for cycle in bridges_all_cycles:
-            self.draw_cycle_and_bridges(G, bridges_all_cycles, list(cycle))
+    def print_bridges(self, G, bridges_all_cycles, save=False, 
+                            name="cycle and bridges", dir_name="images"):
+        for i, cycle in enumerate(bridges_all_cycles):
+            self.draw_cycle_and_bridges(G, bridges_all_cycles, list(cycle),
+                                        save=save, name=(name +  str(i)), 
+                                        dir_name=dir_name
+                                        )
             
 
     def print_CNF_lists(
@@ -134,7 +157,10 @@ class Printer:
 class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER MÁS DE UNA CLASE EN EL MISMO ARCHIVO O DEBEN ESTAR EN ARCHIVOS SEPARADOS. 
 ### TODO ESCRIBIR A NETWORKX PARA VER SI QUIEREN MI LIBRERÍA
 
-    def print_n_connected_components(self, G, NCC, max_line_length=40, N=-1):
+    def print_n_connected_components(self, G, NCC, max_line_length=40, N=-1,
+                                     save=False, name="connected components", 
+                                     dir_name="images"
+                                     ):
         import matplotlib.pyplot as plt
         import networkx as nx
         import textwrap
@@ -241,6 +267,13 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
             0.02, 0.5, subtitle_text, wrap=True,
             horizontalalignment='left', verticalalignment='center', fontsize=10
         )
+        
+        if save:
+            os.makedirs(dir_name, exist_ok=True)
+    
+            # Set the save path (always PNG)
+            save_path = os.path.join('images', f'{name}.png')
+            plt.savefig(save_path, bbox_inches='tight')
     
         plt.show()
 
