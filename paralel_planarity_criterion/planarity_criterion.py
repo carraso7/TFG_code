@@ -788,6 +788,8 @@ class PlanarityCriterion:  # TODO COMENTAR
     
     
     def is_planar(self, G):
+        if (len(G.edges()) > 3 * len(G.nodes()) - 6):
+            return False, None ###TODO GESTIONAR RETURNS DE INFO, TODOS LOS DICTS CON LAS MISMAS ENTRADAS
         finder = TCC.TriconnectedFinder()
         TCCs, info = finder.triconnected_comps(G)
         #print("TCCs", TCCs) ### TODO PRINT QUITAR 
@@ -807,13 +809,16 @@ class PlanarityCriterion:  # TODO COMENTAR
             
             fundamental_cycles = self.fundamental_cycles(tcc, spanning_tree)
             
+            print("finished fundamental cycles") ### TODO PRINT QUITAR
             bridges = self.get_bridges(tcc, fundamental_cycles)
             
+            print("finished bridges") ### TODO PRINT QUITAR
             truth_assign, info = self.get_truth_assigment(
                 tcc, fundamental_cycles, bridges
                 )
             info["truth_assign"] = truth_assign
             
+            print("finished TA") ### TODO PRINT QUITAR
             if truth_assign is None:
                 info["failing tcc"] = tcc
                 print("false por no existir truth assigment") ### TODO PRINT QUITAR 
@@ -824,15 +829,19 @@ class PlanarityCriterion:  # TODO COMENTAR
                 tcc, truth_assign, fundamental_cycles, info
                 )
             
+            print("finished rel_t") ### TODO PRINT QUITAR
             peripheral_basis, info = self.get_peripheral_basis(
                 rel_lt, fundamental_cycles, info
                 )     
             info["periph_basis"] = peripheral_basis
+        
+            print("finished periph basis") ### TODO PRINT QUITAR
             
             plane_mesh = self.get_plane_mesh(peripheral_basis)
             info["plane_mesh"] = plane_mesh
             
             edges_count = {edge: 0 for edge in tcc.edges()}
+            info["edges_count"] = edges_count
             #print(edges_count)  ### TODO PRINT QUITAR
             for cycle in plane_mesh:
                 for edge in cycle:
@@ -864,9 +873,9 @@ class PlanarityCriterion:  # TODO COMENTAR
                     print("false por plane mesh mala") ### TODO PRINT QUITAR 
                     #print("\n\nBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
                     return False, info
-        print("REL IN", info["rel_in"])
-        print("rel lt", rel_lt)
-        info["edges_count"] = edges_count
+        # print(info)
+        # print("REL IN", info["rel_in"]) ### TODO PRINT QUITAR
+        # print("rel lt", rel_lt)
         return True, info
     
    
