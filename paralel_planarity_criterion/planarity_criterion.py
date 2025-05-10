@@ -232,7 +232,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             neg_offset = general_neg_offset + c_index * n_edges
             for bridge in bridges_all_cycles[tuple(c)]:
                 # Usamos directamente las aristas del puente
-                for edge1, edge2 in combinations(bridge["edges"], 2): 
+                for edge1, edge2 in combinations(bridge["edges"], 2): ### TODO PENSAR SI SON COMB O PERM
                     e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
                     # e1 -> e2
                     #print("a add up to", neg_offset + e2, neg_offset + e1, e2, e1) ### TODO PRINT QUITAR
@@ -628,6 +628,7 @@ class PlanarityCriterion:  # TODO COMENTAR
         cycle_index_map = info["cycle_index_map"]
         edge_index_map = info["edge_index_map"]
         
+        # We do combinations because we check both ways
         for cycle1, cycle2 in combinations(fundamental_cycles, 2): ### TODO PENSAR SI ES COMBINATIONS O PERMUTATIONS
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
@@ -641,6 +642,7 @@ class PlanarityCriterion:  # TODO COMENTAR
                 if edge not in c1_edges:
                     c2_not_c1 = edge_index_map[edge]
                     break
+            # check both ways
             if truth_assign[c2*len(G.edges()) + c1_not_c2]:
                 rel_in[c1][c2] = 1
             if truth_assign[c1*len(G.edges()) + c2_not_c1]:
@@ -862,6 +864,8 @@ class PlanarityCriterion:  # TODO COMENTAR
                     print("false por plane mesh mala") ### TODO PRINT QUITAR 
                     #print("\n\nBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
                     return False, info
+        print("REL IN", info["rel_in"])
+        print("rel lt", rel_lt)
         info["edges_count"] = edges_count
         return True, info
     
