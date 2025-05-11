@@ -243,9 +243,10 @@ def get_embbeding(G):
     # Combine all TCC coordinates into a global layout
     merged = rigid_merge_tcc_coordinates(coordinates_list) ### TODO TENER EN CUENTA POSIBLES NODOS QUE HAYAN QUEDADO FUERA DE LOS TCCs
     
-    print()
-    print("final graph:")
-    print(merged)
+    # print()
+    # print("final graph:")
+    # print(merged)
+    
     for node in G.nodes: ### TODO VER CUÁL ES LA MEJOR MANERA DE HACER ESTO
         if node not in merged:
             # Find a placed neighbor
@@ -257,9 +258,65 @@ def get_embbeding(G):
             else:
                 # Completely isolated and unplaced: put at origin or random
                 merged[node] = (0.0, 0.0)
-    print(merged)
-    # Visualize full graph with global layout
-    draw_graph_with_coordinates(G, merged, title="Merged Global Embedding")
-    print()
+                
+    # print(merged)
+    # # Visualize full graph with global layout
+    # draw_graph_with_coordinates(G, merged, title="Merged Global Embedding")
+    # print()
     
     return planar_list, coordinates_list
+
+
+def get_embbeding_not_TCC(G):
+    if (len(G.edges()) > 3 * len(G.nodes()) - 6):
+        return False, None ###TODO GESTIONAR RETURNS DE INFO, TODOS LOS DICTS CON LAS MISMAS ENTRADAS
+    finder = TCC.TriconnectedFinder()
+    TCCs, info = finder.triconnected_comps(G)
+    #print("TCCs", TCCs) ### TODO PRINT QUITAR 
+    #print(info) ### TODO PRINT QUITAR 
+    
+    criterion = planarity_criterion.PlanarityCriterion()
+           
+    spanning_tree = criterion.spanning_tree(G)
+    
+    fundamental_cycles = criterion.fundamental_cycles(G, spanning_tree)
+    
+    bridges = criterion.get_bridges(G, fundamental_cycles)
+    
+    truth_assign, info = criterion.get_truth_assigment(
+        G, fundamental_cycles, bridges
+        )
+    info["truth_assign"] = truth_assign
+    
+    if truth_assign is None:
+        return False, []
+    
+    rel_lt, info = criterion.compute_lt(
+        G, truth_assign, fundamental_cycles, info
+        )
+    
+    peripheral_basis, info = criterion.get_peripheral_basis(
+        rel_lt, fundamental_cycles, info
+        ) 
+    peripheral_cycle = criterion.edges_to_cycle(peripheral_basis[0])
+    planar, coordinates = periph_c_to_embedding(G, peripheral_cycle)
+    
+    
+    for node in G.nodes: ### TODO VER CUÁL ES LA MEJOR MANERA DE HACER ESTO
+        if node not in coordinates :
+            # Find a placed neighbor
+            placed_neighbors = [nbr for nbr in G.neighbors(node) if nbr in coordinates]
+            if placed_neighbors:
+                ref = placed_neighbors[0]
+                x, y = coordinates[ref]
+                coordinates[node] = (x + 0.5, y + 0.5)  # Simple offset
+            else:
+                # Completely isolated and unplaced: put at origin or random
+                coordinates[node] = (0.0, 0.0)
+    
+    
+    draw_graph_with_coordinates(G, coordinates)
+
+        
+
+    return planar, coordinates
