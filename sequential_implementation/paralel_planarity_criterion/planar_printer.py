@@ -98,7 +98,57 @@ def rigid_merge_tcc_coordinates(coord_lists):
 
 
 
-def draw_graph_with_coordinates(G, coordinates, title="Graph Embedding", show_labels=True):
+def draw_graph_with_coordinates(G, coordinates, title="Graph Embedding", show_labels=True, virtual_edges=[]):
+    """
+    Plots the graph G using the provided coordinates, with optional virtual edges as dashed lines.
+
+    Parameters:
+    - G : networkx.Graph
+        The input graph.
+    - coordinates : dict
+        A dictionary mapping each node to a (x, y) coordinate.
+    - title : str
+        Title for the plot.
+    - show_labels : bool
+        Whether to show node labels.
+    - virtual_edges : list of tuples (optional)
+        List of virtual edges (node pairs) to draw as dashed lines.
+    """
+
+    import matplotlib.pyplot as plt
+    import copy
+
+    plt.figure(figsize=(8, 8))
+    ax = plt.gca()
+
+    # Create a shallow copy of G without virtual edges
+    G_copy = G.copy()
+    for u, v in virtual_edges:
+        if G_copy.has_edge(u, v):
+            G_copy.remove_edge(u, v)
+        elif G_copy.has_edge(v, u):  # in case edge is reversed
+            G_copy.remove_edge(v, u)
+
+    # Draw real edges and nodes
+    nx.draw_networkx_edges(G_copy, pos=coordinates, edge_color='gray', style='solid', ax=ax)
+    nx.draw_networkx_nodes(G_copy, pos=coordinates, node_color='skyblue', node_size=600, ax=ax)
+    if show_labels:
+        nx.draw_networkx_labels(G_copy, pos=coordinates, font_weight='bold', ax=ax)
+
+    # Draw virtual edges as dashed lines
+    for u, v in virtual_edges:
+        if u in coordinates and v in coordinates:
+            x0, y0 = coordinates[u]
+            x1, y1 = coordinates[v]
+            ax.plot([x0, x1], [y0, y1], linestyle='--', color='gray', linewidth=1.5)
+
+    plt.title(title)
+    plt.axis('equal')
+    plt.show()
+
+
+### TODO QUITAR VERSION ANTIGUA SIN VIRTUAL EDGES
+def draw_graph_with_coordinates1(G, coordinates, title="Graph Embedding", show_labels=True):
     """
     Plots the graph G using the provided coordinates.
 
@@ -128,18 +178,38 @@ def draw_graph_with_coordinates(G, coordinates, title="Graph Embedding", show_la
     plt.show()
 
 
+def get_regular_polygon_positions(peripheral_cycle):
+    """
+    Maps the nodes in `peripheral_cycle` to points of a regular polygon
+    inscribed in the unit circle, in the order provided.
+
+    Returns:
+        pos: dict[node] = (x, y)
+    """
+    import numpy as np
+    p = len(peripheral_cycle) - 1 if peripheral_cycle[0] == peripheral_cycle[-1] else len(peripheral_cycle)
+    pos = {}
+    for i, v in enumerate(peripheral_cycle[:p]):
+        angle = 2 * np.pi * i / p
+        pos[v] = (np.cos(angle), np.sin(angle))
+    return pos
+
+
 def periph_c_to_embedding(G, peripheral_cycle):
     import matplotlib.pyplot as plt
     from scipy.sparse import lil_matrix
     from scipy.sparse.linalg import spsolve
-
-    # Step 1: Map peripheral cycle to convex polygon (unit circle)
-    p = len(peripheral_cycle)
-    pos = {}
-    for i, v in enumerate(peripheral_cycle):
-        angle = 2 * np.pi * i / p
-        pos[v] = (np.cos(angle), np.sin(angle))  # convex polygon on unit circle
-
+    
+    
+    # # Step 1: Map peripheral cycle to convex polygon (unit circle)
+    # p = len(peripheral_cycle)
+    # pos = {}
+    # for i, v in enumerate(peripheral_cycle):
+    #     angle = 2 * np.pi * i / p
+    #     pos[v] = (np.cos(angle), np.sin(angle))  # convex polygon on unit circle
+        
+    pos = get_regular_polygon_positions(peripheral_cycle)
+    
     # Step 2: Construct the conductance matrix A
     n = len(G.nodes)
     node_list = list(G.nodes)
@@ -205,8 +275,8 @@ def get_embbeding(G):
         # Extract the subgraph
         tcc = G.subgraph(tcc_list["node_list"]).copy()
         
-        #print("nodos subgrafo:", tcc.nodes()) ### TODO PRINT QUITAR 
-        #print("edges subgrafo:", tcc.edges())  ### TODO PRINT QUITAR 
+        print("nodos subgrafo:", tcc.nodes()) ### TODO PRINT QUITAR 
+        print("edges subgrafo:", tcc.edges())  ### TODO PRINT QUITAR 
      
         # Add virtual edges
         tcc.add_edges_from(tcc_list["virtual_edges"])
@@ -236,7 +306,9 @@ def get_embbeding(G):
             ) 
         peripheral_cycle = criterion.edges_to_cycle(peripheral_basis[0])
         planar, coordinates = periph_c_to_embedding(tcc, peripheral_cycle)
-        draw_graph_with_coordinates(tcc, coordinates)
+        draw_graph_with_coordinates(tcc, coordinates, 
+                                    virtual_edges=tcc_list["virtual_edges"]
+                                    )
         coordinates_list.append(coordinates)
         planar_list.append(planar)
         
