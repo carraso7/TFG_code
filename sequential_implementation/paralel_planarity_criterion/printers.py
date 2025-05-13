@@ -49,6 +49,29 @@ class Printer:
 
     def draw_cycle_and_bridges(self, G, bridges_all_cycles, cycle, save=False, 
                             name="cycle and bridges", dir_name="images"):
+        """
+        Draws a cycle of a graph with all its bridges with different colors.
+
+        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
+        ----------
+        G : TYPE
+            DESCRIPTION.
+        bridges_all_cycles : TYPE
+            DESCRIPTION.
+        cycle : TYPE
+            DESCRIPTION.
+        save : TYPE, optional
+            DESCRIPTION. The default is False.
+        name : TYPE, optional
+            DESCRIPTION. The default is "cycle and bridges".
+        dir_name : TYPE, optional
+            DESCRIPTION. The default is "images".
+
+        Returns
+        -------
+        None.
+
+        """
         bridges = bridges_all_cycles.get(tuple(cycle), [])
         if not bridges:
             print(f"No bridges found for cycle: {cycle}")
@@ -93,6 +116,27 @@ class Printer:
     
     def print_bridges(self, G, bridges_all_cycles, save=False, 
                             name="cycle and bridges", dir_name="images"):
+        """
+        Prints all the bridges of each cycle with different colors.
+
+        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
+        ----------
+        G : TYPE
+            DESCRIPTION.
+        bridges_all_cycles : TYPE
+            DESCRIPTION.
+        save : TYPE, optional
+            DESCRIPTION. The default is False.
+        name : TYPE, optional
+            DESCRIPTION. The default is "cycle and bridges".
+        dir_name : TYPE, optional
+            DESCRIPTION. The default is "images".
+
+        Returns
+        -------
+        None.
+
+        """
         for i, cycle in enumerate(bridges_all_cycles):
             self.draw_cycle_and_bridges(G, bridges_all_cycles, list(cycle),
                                         save=save, name=(name +  str(i)), 
@@ -118,6 +162,23 @@ class Printer:
             print("-" * 50)
             
     def print_cycle_edge_table(boolean_list, edge_map, cycle_map):
+        """
+        Prints a truth assigment as a table of boolean variables.
+
+        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
+        ----------
+        boolean_list : TYPE
+            DESCRIPTION.
+        edge_map : TYPE
+            DESCRIPTION.
+        cycle_map : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         # Get the number of edges (columns) and cycles (rows)
         num_edges = len(set(edge_map.values()))
         num_cycles = len(cycle_map)
@@ -152,6 +213,19 @@ class Printer:
             for col, val in enumerate(row_values):
                 row_str += ('True' if val else 'False').ljust(col_widths[col])
             print(row_str)
+            
+    def print_B_matrix(matrix, name):
+        n = len(matrix)
+        print(f"\n{name}:")
+
+        # Print column headers
+        header = "   " + ' '.join(f"{j:2}" for j in range(n))
+        print(header)
+
+        # Print each row with its index
+        for i, row in enumerate(matrix):
+            row_str = f"{i:2}|" + ' '.join(f"{'-' if elem == float('-inf') else f'{elem:2}'}" for elem in row)
+            print(row_str)
 
 ### TODO UTILIZAR ESTA CLASE EN LUGAR DE LA DE TRICOMPONENTS EN LOS EJEMPLOS
 class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER MÁS DE UNA CLASE EN EL MISMO ARCHIVO O DEBEN ESTAR EN ARCHIVOS SEPARADOS. 
@@ -161,6 +235,33 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
                                      save=False, name="connected components", 
                                      dir_name="images"
                                      ):
+        """
+        Prints the N connected components of the graph. In the case N=3, it 
+        prints the components as the definition in the paper, also called
+        triconnected blocks in this case.
+
+        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
+        ----------
+        G : TYPE
+            DESCRIPTION.
+        NCC : TYPE
+            DESCRIPTION.
+        max_line_length : TYPE, optional
+            DESCRIPTION. The default is 40.
+        N : TYPE, optional
+            DESCRIPTION. The default is -1.
+        save : TYPE, optional
+            DESCRIPTION. The default is False.
+        name : TYPE, optional
+            DESCRIPTION. The default is "connected components".
+        dir_name : TYPE, optional
+            DESCRIPTION. The default is "images".
+
+        Returns
+        -------
+        None.
+
+        """
         import matplotlib.pyplot as plt
         import networkx as nx
         import textwrap
@@ -276,7 +377,8 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
             plt.savefig(save_path, bbox_inches='tight')
     
         plt.show()
-
+    
+    """
     def print_n_connected_components1(self, G, NCC, max_line_length=40, N=-1):
         # Initialize classification dictionaries
         node_classes = {}  # Store which NCC each node belongs to
@@ -352,4 +454,5 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
                     verticalalignment='center', fontsize=10)
     
         plt.show()
+        """
     

@@ -1,19 +1,20 @@
-# -*- coding: utf-8 -*-
 """
 Created on Thu Mar 20 14:33:45 2025
 
-@author: carlos
+@author: Carlos
+
+We consider that the graph has n nodes and m edges. At most, graphs can have
+3n edges. All the complexities are calculated using n^6 processors. 
 """
-### TODO VER SI SOBRA ALGÚN IMPORT
-import networkx as nx
-import matplotlib.pyplot as plt
+
+### TODO Falta anotar todo el cálculo de complejidad
+
 import networkx as nx
 from itertools import combinations
 
 class TriconnectedFinder():
-    
-    
-    def __find_sep_pairs(self, G): # TODO VER SI SON DOS LÍNEAS AL FINAL TBN EN MÉTODOS PRIVADOS
+       
+    def __find_sep_pairs(self, G): 
         """
         Finds and returns all separation pairs of graph G
         
@@ -26,10 +27,10 @@ class TriconnectedFinder():
         -------
         sep_pairs : list
             List of tuples. Each tuple represents a separation pair of `G`.
-
+            
         """
         sep_pairs = []
-        for sp in list(combinations(G.nodes, 2)): # paralelizable
+        for sp in list(combinations(G.nodes, 2)): # O(n^2) iterations
             H = G.copy()
             H.remove_nodes_from(sp)
             if not nx.is_connected(H):
@@ -58,7 +59,6 @@ class TriconnectedFinder():
             component it belongs to in the graph ignoring the separation pair. 
 
         """
-        # Hacer que sea un diccionario con claves cada pareja
         connected_components = {}
         for sep_pair in sep_pairs:
             H = G.copy()
@@ -81,7 +81,7 @@ class TriconnectedFinder():
             Graph to find relation R.
         connected_components : dict
             Dictionary representing the connected components of the graph 
-            deleting each separation pair (described in 
+            without each separation pair (described in 
             `__find_connected_components`).
 
         Returns
@@ -89,7 +89,7 @@ class TriconnectedFinder():
         relation_R : list
             List of size `G.nodes()` * `G.nodes()`. Nodes with indexes i and j
             are R-related if and only if `relation_R[i][j]` is true.
-
+            
         """
         ### TODO hacer que el index se calcule una sola vez para todos los métodos que lo usan
         ### TODO ESTO SE PUEDE HACER CON UNA MATRIZ TRIANGULAR O SPARSE MEJOR O INCLUSO CON ALGUNA CLASE DE RELACIONES
@@ -148,7 +148,7 @@ class TriconnectedFinder():
         ----------
         G : networkx.Graph
             Graph to find triconnected components.
-        rel_T : lsit
+        rel_T : list
             Relation T of ´G´ as described in ´__find_relation_T´.
         rel_R : list
             Relation R of ´G´ as described in ´__find_relation_R´.
@@ -159,37 +159,35 @@ class TriconnectedFinder():
             List of dictionaries with two entries. 'node list' and 
             'virtual edges'. Each dictionary represents a triconnected block
             with all its nodes in node list and its virtual edges in 
-            'virtual edges'. Virtual edges are edges of the TCC not in G
+            'virtual edges'. Virtual edges are edges of the TCC that are not 
+            contained in G
+            
         """
-        #print(sep_pairs)### todo quitar
         node_index = {node: i for i, node in enumerate(G.nodes)}
         triply_components = []
-        for rel_T_elem in rel_T:
+        for rel_T_elem in rel_T: 
             ### TODO IGUAL ES MÁS FÁCIL ITERAR POR LOS SEP PAIR A TRAVÉS DE CADA TCC ENCONTRADA
             triply_component = list(rel_T_elem) ### TODO AQUÍ REVISAR SI TIENE DENTRO UN SEP PAIR Y EN TAL CASO QUIZÁ AÑADIR UN GHOST EDGE
             for node in G.nodes:
                 if rel_R[node_index[rel_T_elem[0]]][node_index[node]] and rel_R[node_index[rel_T_elem[1]]][node_index[node]] and rel_R[node_index[rel_T_elem[2]]][node_index[node]]:
                     triply_component.append(node) ### TODO CADA VEZ QUE SE AÑADE UNO, VER SI FORMA PARTE DE UN SEP PAIR Y, EN TAL CASO, SI TAMBIÉN ESTÁ EL OTRO
             triply_components.append(triply_component)
+        # Delete repeated triply connected components
         TCCs_lists = list(set(frozenset(comp) for comp in triply_components))
         TCCs = []
         for tcc_list in TCCs_lists:
             tcc = {"node_list": tcc_list, "virtual_edges": []}
             for sep_pair in sep_pairs:
-                #if (sep_pair == (4, 2)) or (sep_pair == (2, 4)):
-                    # print(G.nodes())### todo quitar
-                    # print((sep_pair[0] in tcc_list), (sep_pair[1] in tcc_list), (sep_pair not in G.edges()))### todo quitar
                 if (sep_pair[0] in tcc_list) and (sep_pair[1] in tcc_list) and (sep_pair not in G.edges()):  ### TODO VER SI SEP_PAIR TIENE FORMATO CORRECTO
                     tcc["virtual_edges"].append(sep_pair)    
             TCCs.append(tcc)
-            # print(tcc)  ### todo quitar
-        # print(TCCs) ### todo quitar
-        return TCCs ### TODO CAMBIAR ESTE TIPO DE SALIDA EN EL PRINTER Y TRATAR VIRTUAL EDGES
+        return TCCs 
+    
     
     def triconnected_comps(self, G):
         """
-        TODO: - CAMBIAR RETURN CON INFO
-              - CREAR UN MÉTODO QUE TAMBIÉN DEVUELVA LA INFO Y OTRO QUE NO???
+        Get triconnected components of graph `G` as in #TODO REFERENCE PAPER 
+        
         Parameters
         ----------
         G : networkx.Graph
@@ -197,28 +195,30 @@ class TriconnectedFinder():
 
         Returns
         -------
-        TCCs : list            
+        TCCs : list of dictionaries            
             List of dictionaries with two entries. 'node list' and 
             'virtual edges'. Each dictionary represents a triconnected block
             with all its nodes in node list and its virtual edges in 
             'virtual edges'. Virtual edges are edges of the TCC not in G
-        all_relation_T : list of lists of tuples of length 3
-            One list for each biconnected component containing all the 
-            elements of the relation T of that component represented by
-            a tuple of three nodes.
-        all_relation_R : list of n*n list matrices of booleans
-            One list matrix for each biconnected component. Each matrix 
-            represents the relation R between all the nodes, true if they are 
-            related and false otherwise. The matrix is symmetric. 
-        all_connected_components : list of dictionaries
-            One dictionary for each biconnected component. The keys of the 
-            dictionary are the separation pairs and the value is a dictionary
-            with all the nodes labeled depending on their connected components
-            on the graph taking out the separation pair. 
-        all_sep_pairs : list of list of tuples of length 2
-            One list for each biconnected component. The list contains all of
-            the separation pairs.
-
+        info: dictionary with the following string entries: 
+            - 'all_relation_T' : list of lists with tuples of length 3
+                One list for each biconnected component containing the 
+                elements of relation T in that component represented by
+                tuples of three nodes.
+            - 'all_relation_R' : list of n*n matrices of booleans.
+                One matrix for each biconnected component. Each matrix 
+                represents the relation R between all the nodes, true if they 
+                are related and false otherwise. The matrices are symmetric. 
+            - 'all_connected_components' : list of dictionaries.
+                One dictionary for each biconnected component. The keys of the 
+                dictionary are the separation pairs and the value is a 
+                dictionary with all the nodes labeled depending on their 
+                connected components on the graph taking out the separation 
+                pair. 
+            - 'all_sep_pairs' : list of lists of tuples with length 2
+                One list for each biconnected component. Each list contains  
+                the separation pairs of the biconnected component.
+                
         """
         all_TCCs = []
         all_relation_T = []
@@ -228,8 +228,6 @@ class TriconnectedFinder():
         
         # Find biconnected components and create subgraphs
         bicomponents = list(nx.biconnected_components(G))
-        
-        # subgraphs = [G.subgraph(component).copy() for component in bicomponents]
         subgraphs = [G.subgraph(component).copy() for component in bicomponents if len(component) >= 3]
         
         for subgraph in subgraphs:
@@ -252,5 +250,4 @@ class TriconnectedFinder():
         info["sep_pairs"] = all_sep_pairs
         
         return all_TCCs, info
-
-
+    

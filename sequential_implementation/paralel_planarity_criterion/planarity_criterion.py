@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Mar 26 00:35:41 2025
 
@@ -7,21 +6,27 @@ Created on Wed Mar 26 00:35:41 2025
 
 import networkx as nx
 import random
-
-from collections import deque
-
-
 from itertools import combinations, permutations
-
-import math
-
 import SAT2_solver
 import triconnected_components as TCC
 
+class PlanarityCriterion:  # TODO Pensar si dejar como clase
 
-class PlanarityCriterion:  # TODO COMENTAR
+    def spanning_tree(self, G): 
+        """
+        Gets an spanning tree as an undirected graph from a random node
 
-    def spanning_tree(self, G): ## TODO CAMBIAR A PRIVADO
+        Parameters
+        ----------
+        G : networkx.Graph 
+            Graph to get spanning tree.
+
+        Returns
+        -------
+        spanning_tree_undirected : networkx.Graph 
+            spanning tree of `G` as undirected graph.
+
+        """
         # Select a random starting node
         random_node = random.choice(list(G.nodes))
 
@@ -29,15 +34,31 @@ class PlanarityCriterion:  # TODO COMENTAR
         spanning_tree = nx.dfs_tree(G, source=random_node)
 
         # Convert spanning tree to an undirected graph
-        spanning_tree_undirected = nx.Graph(spanning_tree)
+        spanning_tree_undirected = nx.Graph(spanning_tree) ### TODO Revisar si esto es necesario
 
         return spanning_tree_undirected
 
-    # TODO FALTA AQUÍ UN PRINTER QUE HAY QUE INCLUIR EN UN NUEVO ARCHIVO QUE SEA PRINTERS
-
-    # TODO QUITAR LO DE UNDIRECTED
-    # TODO VER SI SE PUEDE HACER CON NETWORKX
-    def fundamental_cycles(self, G, spanning_tree_undirected): ## TODO CAMBIAR A PRIVADO O CAMBIAR A UNA CLASE DE ÚTILES
+    
+    def fundamental_cycles(self, G, spanning_tree_undirected): # TODO VER SI SE PUEDE HACER CON NETWORKX
+        """
+        Computes the fundamental cycles of a graph `G` with respect to a given 
+        spanning tree. A fundamental cycle is formed by adding one non-tree 
+        edge to the spanning tree.
+    
+        Parameters
+        ----------
+        G : networkx.Graph
+            The original undirected graph.
+        spanning_tree_undirected : networkx.Graph
+            A spanning tree of `G`, represented as an undirected graph.
+    
+        Returns
+        -------
+        fundamental_cycles: list of lists
+            A list of cycles, where each cycle is represented as a list of 
+            nodes ending at the starting node to form a closed path.
+            
+        """
         # Ensure spanning tree edges are treated as undirected
         spanning_tree_edges = set(spanning_tree_undirected.edges())
 
@@ -55,32 +76,39 @@ class PlanarityCriterion:  # TODO COMENTAR
             fundamental_cycles.append(cycle)
         return fundamental_cycles
     
+    
     def get_bridges(self, G, fundamental_cycles):  ### TODO TESTEAR ESTE MÉTODO DE BRIDGES CONTRA EL OTRO GET_BRIDGES_1
-        # TODO intentar repetir el algoritmo buscando primero componentes triconnexas quitando los edges del ciclo y después haciendo
-        # tratamiento especial de aquellas que contienen algún nodo del ciclo, separando esas por el nodo del ciclo. Para ello se puede
-        # Hacer DFS desde el nodo del ciclo en las componentes que tengan un ciclo y para cada vecino del nodo del ciclo asignar una nueva
-        # componente triconnexa distinta de la del resto de vecinos
-        
-        ### Ver primero componentes conexas quitando edges del ciclo y luego
-        # quitar los nodos del ciclo de esas componentes para ver qué separaciones 
-        # provoca el ciclo
         
         """
-        Separar 3 tipos de edges, según cuántos nodos del ciclo tienen. Hacer
-        componentes conexas del grafo sin el ciclo (quitando nodos y edges) y 
-        luego ir edge por edge de los que tienen algún nodo en el ciclo 
-        clasificándolos.
+        Identifies the bridges of `G` relative to each fundamental cycle 
+        (defined in ### TODO REFERENCIA PAPER)
+        
+        Parameters
+        ----------
+        G : networkx.Graph
+            Input graph.
+        fundamental_cycles : list of lists
+            A list of cycles forming a fundamental basis of cycles. Each cycle 
+            is represented by a list of nodes ending at the starting node.
+        
+        Returns
+        -------
+        bridges_all_cycles: dict[tuple[Hashable], list[dict]]
+            A dictionary where each key is a cycle (as a tuple of nodes with
+            the same start and end node), and each value is a list of bridges. 
+            Each bridge is represented as a dictionary with:
+                - 'edges': list of tuples.
+                    Edges (undirected )in the bridge as tuples of nodes.
+                - 'att_ver': set.
+                    Attachment vertices with the cycle as a list of nodes.
+                
         """
-
         bridges_all_cycles = {}
         attachment_vertices_all_cycles = {}
 
-        
-        for c in fundamental_cycles:
-            #print("---GETTING BRIDGES---")  ######TODO
-            #print("cycle", c)
+        for c in fundamental_cycles: 
             attachment_vertices = [] ### TODO CREO QUE SE PUEDE HACER SIN ATT VERT GLOBAL
-            attachment_edges = [] ### TODO CHEKEAR SI ESTA LISTA VIOLA PARALELIZACIÓN.
+            attachment_edges = [] 
             bridges = []
             
             # Create a copy of the graph and remove cycle edges
@@ -91,18 +119,17 @@ class PlanarityCriterion:  # TODO COMENTAR
             G_no_c_nodes.remove_nodes_from(c)
         
             for cycle_node in c[:-1]:  ### TODO REVISAR REPETICIONES AQUÍ.
-                #print(cycle_node, "edges: ", G_no_c_edges.edges(cycle_node)) ######TODO
                 for att_edge in G_no_c_edges.edges(cycle_node):
-                    #print("att_edge:", att_edge) ######TODO
+                    # Attachment edge with one node outside of cycle
                     if att_edge[0] not in c or att_edge[1] not in c:
                         attachment_vertices.append(att_edge[0] if att_edge[0] not in c else att_edge[1])
                         # Add edge to attachment edges only if it has one
                         # node outside of the cycle
                         attachment_edges.append(att_edge) 
+                    # Attachment edge with both nodes in the cycle (it forms a
+                    # bridge on its own).
                     else: ### TODO INVERT THIS IF AND MAKE ELIF WITH NEXT CLAUSE
                         if (att_edge not in attachment_edges) and ((att_edge[1], att_edge[0]) not in attachment_edges):
-                            #print(attachment_edges) ### TODO QUITAR Y ABAJO TMBN
-                            #print((att_edge not in attachment_edges) , (att_edge[1], att_edge[0] not in attachment_edges))
                             bridge = {
                                 "edges": [att_edge],
                                 "att_ver": set([att_edge[0], att_edge[1]])
@@ -115,17 +142,14 @@ class PlanarityCriterion:  # TODO COMENTAR
             attachment_vertices = list(set(attachment_vertices))
             attachment_vertices_all_cycles[tuple(c)] = attachment_vertices
         
-            # Obtener componentes conectados
             connected_comps = list(nx.connected_components(G_no_c_nodes))
-        
-            # Añadir los enlaces de attachment a las componentes
+            # Add attatchment edges to each component
             for comp in connected_comps:
                 subgraph = G_no_c_nodes.subgraph(comp)
                 bridge = {
                     "edges": list(subgraph.edges()),
                     "att_ver": set([])
                 }
-                
                 for edge in attachment_edges:
                     u, v = edge
                     if (u in comp) or (v in comp):
@@ -133,93 +157,14 @@ class PlanarityCriterion:  # TODO COMENTAR
                         bridge["att_ver"].add(u if u in c else v)
                 if bridge["edges"]:
                     bridges.append(bridge)
-        
+                    
             bridges_all_cycles[tuple(c)] = bridges
-            
-            ### TODO AQUÍ FALTA  LO DE PRINTAR CICLOS y bridges
 
         return bridges_all_cycles
-        # print(attachment_vertices_all_cycles)  ### ELIMINADO E INTRODUCIDO EN DICT
 
-    """    
-    def get_bridges1(self, G, fundamental_cycles):
-        # TODO intentar repetir el algoritmo buscando primero componentes triconnexas quitando los edges del ciclo y después haciendo
-        # tratamiento especial de aquellas que contienen algún nodo del ciclo, separando esas por el nodo del ciclo. Para ello se puede
-        # Hacer DFS desde el nodo del ciclo en las componentes que tengan un ciclo y para cada vecino del nodo del ciclo asignar una nueva
-        # componente triconnexa distinta de la del resto de vecinos
-        
-        ### Ver primero componentes conexas quitando edges del ciclo y luego
-        # quitar los nodos del ciclo de esas componentes para ver qué separaciones 
-        # provoca el ciclo
 
-        bridges_all_cycles = {}
-        attachment_vertices_all_cycles = {}
-
-        for c in fundamental_cycles:
-
-            # Create a copy of the graph and remove cycle edges
-            G_no_c_edges = G.copy()
-            G_no_c_nodes = G.copy()
-            G_no_c_edges.remove_edges_from(
-                [(c[i], c[i+1]) for i in range(len(c)-1)])
-            G_no_c_nodes.remove_nodes_from(c)
-
-            # habría que poner los del ciclo?? para empezar no pero como visited?
-            unvisited = list(G_no_c_edges.edges())
-            bridges = []
-            attachment_vertices = []  # TODO SE PUEDE PRESCINDIR DE ESTA VARIABLE
-            q = deque()
-            # print("unvisited", unvisited)
-            for edge1 in G_no_c_edges.edges():
-                if edge1 in unvisited:  # TODO VER SI SE PUEDE MODIFICAR LA LISTA DINÁMICAMENTE, FORMANDO UN SOLO FOR AQUÍ EN VEZ DE IF Y FOR
-                    # print("edge", edge1)
-                    q.append(edge1)
-                    unvisited.remove(edge1)
-                    bridge = {"edges": [], "att_ver": set([])}
-                    bridge["edges"].append(edge1)
-                    # attachment_vertices_bridge = set([]) ### ELIMINADO E INTRODUCIDO EN DICT
-                    while q:
-                        edge2 = q.popleft()  # Current edge being processed
-
-                        for node in edge2:
-                            if node in c:
-                                # attachment_vertices_bridge.add(node) ### ELIMINADO E INTRODUCIDO EN DICT
-                                bridge["att_ver"].add(node)
-                            else:
-                                for neighbor in G_no_c_edges.neighbors(node):
-                                    # print(v, "vecino:" ,neighbor)
-                                    new_edge = (node, neighbor)
-                                    new_edge_rev = (neighbor, node)
-                                    # print(new_edge)
-                                    # print(unvisited)
-                                    # Ensure it's unvisited and not in the cycle
-                                    if (new_edge in unvisited) or (new_edge_rev in unvisited):
-                                        # print("añadir")
-                                        if new_edge in unvisited:
-                                            unvisited.remove(new_edge)
-                                        else:
-                                            unvisited.remove(new_edge_rev)
-                                        if neighbor in c:
-                                            # attachment_vertices_bridge.add(neighbor) ######
-                                            bridge["att_ver"].add(neighbor)
-                                        else:
-                                            q.append(new_edge)
-                                        bridge["edges"].append(new_edge)
-                    # Store the final edge-connected component
-                    bridges.append(bridge)
-                    # attachment_vertices.append(attachment_vertices_bridge)  ### ELIMINADO E INTRODUCIDO EN DICT
-            bridges_all_cycles[tuple(c)] = bridges
-            # attachment_vertices_all_cycles[tuple(c)] = attachment_vertices  ### ELIMINADO E INTRODUCIDO EN DICT
-
-            # TODO AQUÍ FALTA  LO DE PRINTAR CICLOS y bridges
-
-        return bridges_all_cycles
-        # print(attachment_vertices_all_cycles)  ### ELIMINADO E INTRODUCIDO EN DICT
-    """
-    
     ### Auxiliar functions for getting 2 CNF conditions ###
-        
-
+    
     def __update_cond_a(
             self, G, fundamental_cycles, bridges_all_cycles, edge_index_map, 
             implications
@@ -232,10 +177,9 @@ class PlanarityCriterion:  # TODO COMENTAR
             neg_offset = general_neg_offset + c_index * n_edges
             for bridge in bridges_all_cycles[tuple(c)]:
                 # Usamos directamente las aristas del puente
-                for edge1, edge2 in combinations(bridge["edges"], 2): ### TODO PENSAR SI SON COMB O PERM
+                for edge1, edge2 in combinations(bridge["edges"], 2): 
                     e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
                     # e1 -> e2
-                    #print("a add up to", neg_offset + e2, neg_offset + e1, e2, e1) ### TODO PRINT QUITAR
                     implications.append((offset + e1, offset + e2))
                     # e2 -> e1
                     implications.append((offset + e2, offset + e1))
@@ -246,9 +190,8 @@ class PlanarityCriterion:  # TODO COMENTAR
                     
         return implications
 
-    ### TODO SEGUIR DESDE AQUÍ
-    # TODO AQUÍ CREO QUE ES DONDE SE AÑADEN LOS EDGES EN ORDEN CONTRARIO
-    def __get_edges_cycle(self, c):
+
+    def __get_edges_cycle(self, c):# TODO REVISAR SI AQUÍ SE AÑADEN LOS EDGES EN ORDEN CONTRARIO
         edges = []
         for i in range(len(c) - 1):
             edge = [c[i], c[i + 1]]
@@ -256,8 +199,10 @@ class PlanarityCriterion:  # TODO COMENTAR
             edges.append(tuple(edge))
         return edges
 
+
     def __update_cond_b(self, G, fundamental_cycles, edge_index_map, 
-                        cycle_index_map, implications):
+                        cycle_index_map, implications
+                        ):
         n_edges = len(G.edges())
         n_cycles = len(fundamental_cycles)
         neg_offset = n_edges * n_cycles
@@ -269,18 +214,17 @@ class PlanarityCriterion:  # TODO COMENTAR
             c2 = cycle_index_map[tuple(cycle2)]
             c1_not_c2 = [edge for edge in c1_edges if edge not in c2_edges]
             c2_not_c1 = [edge for edge in c2_edges if edge not in c1_edges]
-            # print(c1,c1_edges,c2, c2_edges)###
             for edge1 in c1_not_c2:
                 for edge2 in c2_not_c1:
                     e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
-                    #print("B add up to", neg_offset + c2*n_edges + e1, neg_offset + c1*n_edges + e2) ### TODO PRINT QUITAR
                     # e1c2 -> ¬e2c1
                     implications.append((c2*n_edges + e1, neg_offset + c1*n_edges + e2))
                     # e2c1 -> ¬e1c2
                     implications.append((c1*n_edges + e2, neg_offset + c2*n_edges + e1))
         return implications
 
-    # Auxiliar functions for condition c)
+
+    # Auxiliar functions for checking conflicts in condition c)
 
     def __conflict_type_1(self, bridge_pair, c):
         common_att_vert = 0
@@ -288,7 +232,7 @@ class PlanarityCriterion:  # TODO COMENTAR
             if vertex in bridge_pair[1]["att_ver"]:
                 common_att_vert += 1
                 if common_att_vert >= 3:
-                    return True  # TODO REVISAR ESTE BREAK
+                    return True  
         return common_att_vert >= 3
 
     # TODO checkear que los ciclos siempre entran aquí ordenados
@@ -296,13 +240,7 @@ class PlanarityCriterion:  # TODO COMENTAR
         matching_seq = 0
 
         # Look for the pattern starting on attachment vertices of both pairs
-
-        # print("#################")
-        # print(bridge_pair, c)
         for node in c[0:len(c) - 1]:
-            # print()
-            # print(node)
-            # print(matching_seq)
             if (node in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 0:
                 matching_seq += 1
                 # print(matching_seq)
@@ -339,8 +277,9 @@ class PlanarityCriterion:  # TODO COMENTAR
                 if matching_seq >= 4:
                     return True  # TODO ALGUNOS DE ESTOS SOBRAN SEGÚN LOS MÓDULOS
 
-        # Treat last node of the cycle differently. Otherwise, there can be errors if the starting node
-        # of the cycle is of attachment of both bridges.
+        # Treat last node of the cycle differently. Otherwise, there can be 
+        # errors if the starting node of the cycle is vertex of attachment 
+        # of both bridges.
         if (c[len(c) - 1] in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 1 and (c[len(c) - 1] not in bridge_pair[1]["att_ver"]):
             matching_seq += 1
             if matching_seq >= 4:
@@ -349,7 +288,6 @@ class PlanarityCriterion:  # TODO COMENTAR
         return matching_seq >= 4
 
     def __conflict_between(self, bridge_pair, c):
-        # print("conflict:", c, bridge_pair,"---", conflict_type_1(bridge_pair, c), conflict_type_2(bridge_pair, c))
         return self.__conflict_type_1(bridge_pair, c) or self.__conflict_type_2(bridge_pair, c)
 
     def __update_cond_c(
@@ -362,13 +300,11 @@ class PlanarityCriterion:  # TODO COMENTAR
         for c_index, c in enumerate(fundamental_cycles):
             offset = c_index * n_edges
             neg_offset = general_neg_offset + c_index * n_edges
-            for bridge1, bridge2 in combinations(bridges_all_cycles[tuple(c)], 2): ### TODO PENSAR SI ES COMBINATIONS O PERMUTATIONS
+            for bridge1, bridge2 in combinations(bridges_all_cycles[tuple(c)], 2):
                 if self.__conflict_between((bridge1, bridge2), c):
-                    # print("ciclo", c, "conflicto entre", bridge1, bridge2)### TODO PRINT QUITAR
                     for edge1 in bridge1["edges"]:
                         for edge2 in bridge2["edges"]:
                             e1, e2 = edge_index_map[edge1], edge_index_map[edge2] 
-                            #print("c add up to", neg_offset + e2, neg_offset + e1) ### TODO PRINT QUITAR
                             # e1 -> ¬e2
                             implications.append((offset + e1, neg_offset + e2))
                             # e2 -> ¬e1
@@ -384,27 +320,97 @@ class PlanarityCriterion:  # TODO COMENTAR
             self, G, fundamental_cycles, bridges_all_cycles, edge_index_map,
             cycle_index_map
             ):
+        """
+        Function that returns the list of implications derived from the clauses
+        of the 2CNF problem of getting a sattisfying truth assigment of graph
+        G using all the input information of the graph. 
         
+        The implications are represented as tuples of index in range(2 * c * m),
+        where c is the number of fundamental cycles and m is the number of 
+        edges in `G`. Each integer of the tuple represents a variable of the 
+        2CNF problem or a negated variable of the problem. The integer that 
+        represents the variable with cycle index x and edge index y is 
+        x * m + y and the corresponding negated variable is x * m + y + c * m. 
+        Note that the numbers in the range whose edge belongs to the cycle do 
+        not represent any variable.
+
+        Parameters ### TODO EXPLICAR PARAMETROS O QUITAR SECCIÓN
+        ----------
+        G : TYPE
+            DESCRIPTION.
+        fundamental_cycles : TYPE
+            DESCRIPTION.
+        bridges_all_cycles : TYPE
+            DESCRIPTION.
+        edge_index_map : TYPE
+            DESCRIPTION.
+        cycle_index_map : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        implications : list of tuples with integers.
+            Implications are represented as tuples of index in range(2*c*m),
+            where c is the number of fundamental cycles and m is the number of 
+            edges in `G`. Each integer of the tuple represents a variable of 
+            the 2CNF problem or a negated variable of the problem. The integer 
+            that represents the variable with cycle index x and edge index y is 
+            x*m + y and the corresponding negated variable is x*m + y + c*m. 
+            Note that the numbers in the range whose edge belongs to the cycle 
+            do not represent any variable.
+            
+        """
         implications = []
         
         implications = self.__update_cond_a(
-            G, fundamental_cycles, bridges_all_cycles, edge_index_map, implications
+            G, fundamental_cycles, bridges_all_cycles, edge_index_map, 
+            implications
             )
         
-        #print("imp 1", implications) ### TODO PRINT QUITAR
         implications = self.__update_cond_b(
-            G, fundamental_cycles, edge_index_map, cycle_index_map, implications
+            G, fundamental_cycles, edge_index_map, cycle_index_map, 
+            implications
             )
         
-        #print("imp 2", implications) ### TODO PRINT QUITAR
         implications = self.__update_cond_c(
-            G, fundamental_cycles, bridges_all_cycles, edge_index_map, implications
+            G, fundamental_cycles, bridges_all_cycles, edge_index_map, 
+            implications
             )
         
         return implications
     
     
     def get_truth_assigment(self, G, fundamental_cycles, bridges_all_cycles):
+        """
+        Get a satisfiying truth assigment of variables indexed by fundamental
+        cycles and edges of G. Each variable is indexed by a number in 
+        range(c * m), where c is the number of fundamental cycles and m is the 
+        number of edges in `G`. The integer represents the variable with cycle 
+        index x and edge index y. Note that the numbers in the range whose edge 
+        belongs to the cycle do not represent any variable.
+
+        Parameters ### TODO EXPLICAR PARAMETROS O QUITAR SECCIÓN
+        ----------
+        G : TYPE
+            DESCRIPTION.
+        fundamental_cycles : TYPE
+            DESCRIPTION.
+        bridges_all_cycles : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        results : list of booleans. 
+            List of length number of fund. cycles * number of bridges.
+            
+            Each variable is indexed by a number in range(c * m), where c is
+            the number of fundamental cycles and m is the number of edges in 
+            `G`. The integer represents the variable with cycle index x and 
+            edge index y. Note that the numbers in the range whose edge belongs
+            to the cycle do not represent any variable.
+        info : ### TODO EXPLICAR PARAMETROS O QUITAR SECCIÓN
+
+        """
         
         edge_index_map = {}
         for i, edge in enumerate(G.edges()):
@@ -418,218 +424,56 @@ class PlanarityCriterion:  # TODO COMENTAR
                 cycle_index_map[tuple(c)] = i  # tuple directly
                 index_cycle_map[i] = c  
                 
-        ### TODO COMENTAR COMO FUNCIONA IMPLICATIONS
-        # num_ciclo*num_edges + num_edge es variable positiva
-        # num_ciclos*num_edges + num_ciclo*num_edges + num edge es variable negativa
+        # n_cycle*n_edges + n_edge: positive variable
+        # n_cycle*n_edges + n_edge + n_cycles*n_edges:negative variable
         implications = self.__get_implications_2CNF(
             G, fundamental_cycles, bridges_all_cycles, edge_index_map, 
             cycle_index_map
             )
         solver = SAT2_solver.SAT2_solver()
         n_variables = len(fundamental_cycles) * len(G.edges())
-        #print(n_variables)###TODO PRINT QUITAR
         results, info = solver.get_truth_assigment(implications, n_variables)
         info["edge_index_map"] = edge_index_map
         info["cycle_index_map"] = cycle_index_map
         info["index_cycle_map"] = index_cycle_map
         return results, info 
-        ## TODO IMPORT AND CALL 2CNF SOLVER
-                
-        """        
-### FUNCIONES ANTIGUAS DE 2CNF PARA HACERLO CON LISTAS COMO EN EL PAPER CON LA CLASE DEL FINAL DEL ARCHIVO ###        
-#####################################################################################################################        
-        
-    ### Auxiliar functions for getting 2 CNF conditions ###
-
-    def __update_cond_a1(
-            self, G, fundamental_cycles, bridges_all_cycles, edge_index_map, 
-            CNF_lists
-            ):
-        for c_index, c in enumerate(fundamental_cycles):
-            for bridge in bridges_all_cycles[tuple(c)]:
-                # Usamos directamente las aristas del puente
-                for edge1, edge2 in combinations(bridge["edges"], 2):
-                    # TODO PENSAR SI ES MEJOR METER ÍNDICES  AÑADIR CON RESPECTO A CICLO
-                    e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
-                    # CNF_lists[e1][c_index][0].add(e2)
-                    # CNF_lists[e2][c_index][0].add(e1)
-                    # CNF_lists[e1][c_index][3].add(e2)
-                    # CNF_lists[e2][c_index][3].add(e1)
-                    CNF_lists[e1][c_index][0].add((edge2, c_index))
-                    # TODO PENSAR SI ES MEJOR METER ÍNDICES dentro de las listas
-                    CNF_lists[e2][c_index][0].add((edge1, c_index))
-                    CNF_lists[e1][c_index][3].add((edge2, c_index))
-                    CNF_lists[e2][c_index][3].add((edge1, c_index))
-        return CNF_lists
-
-    # TODO AQUÍ CREO QUE ES DONDE SE AÑADEN LOS EDGES EN ORDEN CONTRARIO
-    def get_edges_cycle1(self, c):
-        edges = []
-        for i in range(len(c) - 1):
-            edge = [c[i], c[i + 1]]
-            edge.sort()
-            edges.append(tuple(edge))
-        return edges
-
-    def __update_cond_b1(self, G, fundamental_cycles, edge_index_map, 
-                        cycle_index_map, CNF_lists):
-        # TODO CHEQUEAR BIEN ESTA CONDICIÓN
-        for c1, c2 in combinations(fundamental_cycles, 2):
-            c1_edges = self.get_edges_cycle1(c1)
-            c2_edges = self.get_edges_cycle1(c2)
-            c1_not_c2 = [edge for edge in c1_edges if edge not in c2_edges]
-            c2_not_c1 = [edge for edge in c2_edges if edge not in c1_edges]
-            # print(c1,c1_edges,c2, c2_edges)###
-            for edge1 in c1_not_c2:
-                for edge2 in c2_not_c1:
-                    # print(edge1, edge2)###
-                    e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
-                    # PN # edge2 respecto C1 ###TODO REVISAR PORQUE AQUÍ TIENE QUE SER CON RESPECTO A DISTINTO CICLO LA QUE SE AÑADE EN LA LISTA PONER CICLOS EN EL RESTO
-                    CNF_lists[e1][cycle_index_map[tuple(c2)]][1].add(
-                        (edge2, cycle_index_map[tuple(c1)]))
-                    # PN # edge1 respecto C2 ###TODO REVISAR PORQUE AQUÍ TIENE QUE SER CON RESPECTO A DISTINTO CICLO LA QUE SE AÑADE EN LA LISTA
-                    CNF_lists[e2][cycle_index_map[tuple(c1)]][1].add(
-                        (edge1, cycle_index_map[tuple(c2)]))
-                    # TODO REVISAR SI METER ÍNDICES DE EDGES
-        return CNF_lists
-
-    # Auxiliar functions for condition c)
-
-    def __conflict_type_1_1(self, bridge_pair, c):
-        common_att_vert = 0
-        for vertex in bridge_pair[0]["att_ver"]:
-            if vertex in bridge_pair[1]["att_ver"]:
-                common_att_vert += 1
-                if common_att_vert >= 3:
-                    return True  # TODO REVISAR ESTE BREAK
-        return common_att_vert >= 3
-
-    # TODO checkear que los ciclos siempre entran aquí ordenados
-    def __conflict_type_2_1(self, bridge_pair, c):
-        matching_seq = 0
-
-        # Look for the pattern starting on attachment vertices of both pairs
-
-        # print("#################")
-        # print(bridge_pair, c)
-        for node in c[0:len(c) - 1]:
-            # print()
-            # print(node)
-            # print(matching_seq)
-            if (node in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 0:
-                matching_seq += 1
-                # print(matching_seq)
-                if matching_seq >= 4:
-                    return True
-            elif (node in bridge_pair[1]["att_ver"]) and matching_seq % 2 == 1:
-                matching_seq += 1
-                # print(matching_seq)
-                if matching_seq >= 4:
-                    return True
-
-        # Treat last node of the cycle differently. Otherwise, there can be errors if the starting node
-        # of the cycle is of attachment of both bridges.
-        if (c[len(c) - 1] in bridge_pair[1]["att_ver"]) and matching_seq % 2 == 1 and (c[len(c) - 1] not in bridge_pair[0]["att_ver"]):
-            matching_seq += 1
-            # print(matching_seq)
-            if matching_seq >= 4:
-                return True
-
-        matching_seq = 0
-        for node in c[0:len(c) - 1]:
-            # print()
-            # print(node)
-            # print(matching_seq)
-            if (node in bridge_pair[1]["att_ver"]) and matching_seq % 2 == 0:
-                matching_seq += 1
-                # print(matching_seq)
-                if matching_seq >= 4:
-                    return True
-            elif (node in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 1:
-                matching_seq += 1
-                # print(matching_seq)
-                # print(matching_seq >= 4)
-                if matching_seq >= 4:
-                    return True  # TODO ALGUNOS DE ESTOS SOBRAN SEGÚN LOS MÓDULOS
-
-        # Treat last node of the cycle differently. Otherwise, there can be errors if the starting node
-        # of the cycle is of attachment of both bridges.
-        if (c[len(c) - 1] in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 1 and (c[len(c) - 1] not in bridge_pair[1]["att_ver"]):
-            matching_seq += 1
-            if matching_seq >= 4:
-                return True
-
-        return matching_seq >= 4
-
-    def __conflict_between1(self, bridge_pair, c):
-        # print("conflict:", c, bridge_pair,"---", conflict_type_1(bridge_pair, c), conflict_type_2(bridge_pair, c))
-        return self.__conflict_type_1_1(bridge_pair, c) or self.__conflict_type_2_1(bridge_pair, c)
-
-    def __update_cond_c1(
-            self, G, fundamental_cycles, bridges_all_cycles, edge_index_map,
-            CNF_lists
-            ):
-        for c_index, c in enumerate(fundamental_cycles):
-            for bridge1, bridge2 in combinations(bridges_all_cycles[tuple(c)], 2):
-                if self.__conflict_between1((bridge1, bridge2), c):
-                    for edge1 in bridge1["edges"]:
-                        for edge2 in bridge2["edges"]:
-                            e1, e2 = edge_index_map[edge1], edge_index_map[edge2] ### TODO VER SI ES MEJOR METERLO CON INDICES Y AÑADIR CICLOS  AQUÍ
-                            # CNF_lists[e1][c_index][1].add(e2)
-                            # CNF_lists[e1][c_index][2].add(e2)
-                            # CNF_lists[e2][c_index][1].add(e1)
-                            # CNF_lists[e2][c_index][2].add(e1)
-                            # print("writing conflict between", e1, e2)
-                            CNF_lists[e1][c_index][0].add((edge2, c_index))  ### TODO VER SI ES MEJOR METERLO CON INDICES
-                            CNF_lists[e2][c_index][0].add((edge1, c_index))
-                            CNF_lists[e1][c_index][3].add((edge2, c_index))
-                            CNF_lists[e2][c_index][3].add((edge1, c_index))
-        return CNF_lists
-
-    def get_2_CNF1(self, G, fundamental_cycles, bridges_all_cycles):
-        # Asignamos índices únicos a las aristas del grafo
-        # edge_index_map = {edge: i for i, edge in enumerate(G.edges())} ### TODO VER DONDE CAMBIAN DE DIRECCIÓN LOS EDGES Y USAR ESTE INDEX MAP
-        # Assign unique indices to edges in the order they appear in G.edges(), w1ith both orientations stored
-        edge_index_map = {}
-        for i, edge in enumerate(G.edges()):
-            edge_index_map[edge] = i
-            # Store reversed edge as well
-            edge_index_map[(edge[1], edge[0])] = i
-
-        cycle_index_map = {}
-        for i, c in enumerate(fundamental_cycles):
-            cycle_index_map[tuple(c)] = i
-
-        # Estructura CNF_lists basada en edges
-        CNF_lists = [[[set([]) for _ in range(4)] for _ in range(
-            len(fundamental_cycles))] for _ in range(len(G.edges()))]
-        # 0 PP
-        # 1 PN
-        # 2 NP
-        # 3 NN
-        
-        ### TODO INCLUIR AQUÍ REFERENCIA DE CONDICIONES A B C EN EL PAPER
-        CNF_lists = self.__update_cond_a1(G, fundamental_cycles,
-                                       bridges_all_cycles, edge_index_map, 
-                                       CNF_lists)
-        
-        CNF_lists = self.__update_cond_b1(G, fundamental_cycles, edge_index_map, 
-                                       cycle_index_map, CNF_lists)
-        
-        CNF_lists = self.__update_cond_c1(G, fundamental_cycles,
-                                       bridges_all_cycles, edge_index_map, 
-                                       CNF_lists)
-        return CNF_lists
-    """ 
+            
     
     def compute_lt(self, G, truth_assign, fundamental_cycles, info):
+        """
+        Computes the strict containment relation (<) between fundamental cycles based
+        on a truth assignment from a 2-SAT formula. One cycle c1 is strictly
+        contained in another cycle c2 if it is contained and there is no other
+        cycle c3 such that c1 is contained in c3 and c3 is contained in c2. 
+        A cycle is contained in another cycle if it has an edge contained in 
+        the other cycle according to the truth assigment. 
+        
+    
+        Parameters
+        ----------
+        G : networkx.Graph
+            The input graph.
+        truth_assign : list of booleans
+            Boolean values indicating the inclusion status of each edge in each 
+            cycle.
+        fundamental_cycles : list of lists of integers
+            List of fundamental cycles in node form.
+    
+        Returns
+        -------
+        rel_lt : n * n matrix, where n is the number of fund. cycles.
+            rel_lt[i][j] = 1 if cycle j < cycle i,
+        info: dict ### TODO EXPLICAR PARAMETROS O QUITAR SECCIÓN
+        
+        """
         rel_lt = [[0 for _ in range(len(fundamental_cycles))] for _ in range(len(fundamental_cycles))]
         rel_in = [[0 for _ in range(len(fundamental_cycles))] for _ in range(len(fundamental_cycles))]
         cycle_index_map = info["cycle_index_map"]
         edge_index_map = info["edge_index_map"]
         
+        # Compute first contained relation (not strictly)
         # We do combinations because we check both ways
-        for cycle1, cycle2 in combinations(fundamental_cycles, 2): ### TODO PENSAR SI ES COMBINATIONS O PERMUTATIONS
+        for cycle1, cycle2 in combinations(fundamental_cycles, 2): 
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
             c1 = cycle_index_map[tuple(cycle1)]
@@ -648,20 +492,17 @@ class PlanarityCriterion:  # TODO COMENTAR
             if truth_assign[c1*len(G.edges()) + c2_not_c1]:
                 rel_in[c2][c1] = 1
         
-        # print("posibles lts", rel_in) ### TODO PRINT QUITAR
         for cycle1, cycle2 in permutations(fundamental_cycles, 2): ### TODO SEGURAMENTE ES MEJOR CON COMBINATIONS Y PROBANDO EN DISTINTO ORDEN
             c1_edges = self.__get_edges_cycle(cycle1)
             c2_edges = self.__get_edges_cycle(cycle2)
             c1 = cycle_index_map[tuple(cycle1)]
             c2 = cycle_index_map[tuple(cycle2)]
-            # print("examinando", c1, c2, cycle1, cycle2, rel_in[c1][c2])### TODO PRINT QUITAR
             if rel_in[c1][c2]: # if its value is 1
-                # print("posible lt", c1, c2, cycle1, cycle2)### TODO PRINT QUITAR
                 rel_lt[c1][c2] = 1
+                # Check if there is any cycle between c1 and c2
                 for cycle3 in fundamental_cycles:    
                     c3 = cycle_index_map[tuple(cycle3)]
                     if rel_in[c1][c3] and rel_in[c3][c2]:
-                        # print(c1, c3, c3)  ### TODO PRINT QUITAR
                         rel_lt[c1][c2] = 0
                         break
                     if rel_lt[c1][c2] == 0:
@@ -684,7 +525,7 @@ class PlanarityCriterion:  # TODO COMENTAR
     
         Returns
         -------
-        list of tuple
+        list of tuples
             A list of edges representing the symmetric difference of the two cycles.
             These are the edges that appear in exactly one of the two input cycles.
         """
@@ -758,13 +599,39 @@ class PlanarityCriterion:  # TODO COMENTAR
 
     
     def get_peripheral_basis(self, rel_lt, fundamental_cycles, info):
+        """
+        Constructs a peripheral cycle basis from the fundamental cycles using 
+        the strict containment relation between them.
+    
+        Each peripheral cycle is computed by summing a fundamental cycle with 
+        all cycles strictly contained in it, according to the `rel_lt` matrix.
+    
+        Parameters
+        ----------
+        rel_lt : list[list[int]]
+            A square binary matrix where rel_lt[i][j] == 1 means that cycle j
+            is strictly contained in cycle i.
+        fundamental_cycles : list[list[Hashable]]
+            The list of fundamental cycles, each as a sequence of nodes.
+        info : dict
+            Dictionary containing:
+                - 'cycle_index_map': dict[tuple[Hashable], int]
+                - 'index_cycle_map': dict[int, list[Hashable]]
+    
+        Returns
+        -------
+        periph_basis_edges: list of tuples of ints.
+            List of lists of edges. Each list has the edges of a peripheral
+            cycle as edges. 
+        info: dict
+        
+        """
         periph_basis_lists = []
         periph_basis_edges = []
         cycle_index_map = info["cycle_index_map"]
         index_cycle_map = info["index_cycle_map"]
         for cycle1 in fundamental_cycles:
             periph_cycle = self.__get_edges_cycle(cycle1)
-            #print("original", periph_cycle) ### TODO PRINT QUIITAR
             c1 = cycle_index_map[tuple(cycle1)]
             for c2 in range(len(fundamental_cycles)):
                 if rel_lt[c2][c1]:
@@ -772,13 +639,31 @@ class PlanarityCriterion:  # TODO COMENTAR
                     periph_cycle = self.__sum_cycles(periph_cycle, cycle2)
             periph_basis_lists.append(self.edges_to_cycle(periph_cycle))
             periph_basis_edges.append(periph_cycle)
-            #print("final:", periph_cycle) ### TODO PRINT QUIITAR
         info["periph_basis_lists"] = periph_basis_lists 
         return periph_basis_edges, info
     
     
     def get_plane_mesh(self, periph_basis_edges):
-        #print(periph_basis_edges) ### todo print quitar
+        """
+        Builds the full plane mesh by adding the outer face to the peripheral 
+        cycle basis.
+    
+        The outer face is computed as the symmetric difference of all 
+        peripheral cycles.
+    
+        Parameters
+        ----------
+        periph_basis_edges: list of tuples of ints.
+            List of lists of edges. Each list has the edges of a peripheral
+            cycle as edges. 
+    
+        Returns
+        -------
+        plane_mesh: list of tuples of ints
+            The plane mesh, consisting of all peripheral cycles plus the outer 
+            face, each represented as a list of undirected edges.
+            
+        """
         outer_cycle =  []
         for cycle in periph_basis_edges:
             outer_cycle = self.__sum_cycles(outer_cycle, cycle)
@@ -788,61 +673,74 @@ class PlanarityCriterion:  # TODO COMENTAR
     
     
     def is_planar(self, G):
+        """
+        Determines if the graph G is planar using Mac Lane criterion as stated
+        in ### TODO INCLUIR REFERENCIA
+
+        Parameters
+        ----------
+        G : networkx.Graph
+            Graph to determine its planarity.
+
+        Returns
+        -------
+        bool
+            Boolean determining if the graph is planar.
+        info: dict
+            Dictionary with extra information about the algorithm
+
+        """
+        # If the graph has more than 3*n - 6 edges, return False. ### TODO REFERENCIA DEMO DE ESTO
         if (len(G.edges()) > 3 * len(G.nodes()) - 6):
-            return False, None ###TODO GESTIONAR RETURNS DE INFO, TODOS LOS DICTS CON LAS MISMAS ENTRADAS
+            return False, None 
+        
+        # Analyze each triconnected component individually. The graph is planar
+        # if all its components are. 
         finder = TCC.TriconnectedFinder()
         TCCs, info = finder.triconnected_comps(G)
-        #print("TCCs", TCCs) ### TODO PRINT QUITAR 
-        #print(info) ### TODO PRINT QUITAR 
         for tcc_list in TCCs:
-            #print("tcc list", tcc_list)
-            # Extract the subgraph
             tcc = G.subgraph(tcc_list["node_list"]).copy()
-            
-            #print("nodos subgrafo:", tcc.nodes()) ### TODO PRINT QUITAR 
-            #print("edges subgrafo:", tcc.edges())  ### TODO PRINT QUITAR 
-         
-            # Add virtual edges
+
+            # Add virtual edges to each tcc
             tcc.add_edges_from(tcc_list["virtual_edges"])
             
             spanning_tree = self.spanning_tree(tcc)
             
             fundamental_cycles = self.fundamental_cycles(tcc, spanning_tree)
             
-            print("finished fundamental cycles") ### TODO PRINT QUITAR
             bridges = self.get_bridges(tcc, fundamental_cycles)
             
-            print("finished bridges") ### TODO PRINT QUITAR
             truth_assign, info = self.get_truth_assigment(
                 tcc, fundamental_cycles, bridges
                 )
+            # Init info dictionary
             info["truth_assign"] = truth_assign
+            info["Failing_tcc"] = "No info"
+            info["rel_in"] = "No info"
+            info["failing_tcc"] = "No info"
+            info["failing_reason"] = "No info"
+            info["failing edge"] = "No info"
             
-            print("finished TA") ### TODO PRINT QUITAR
             if truth_assign is None:
-                info["failing tcc"] = tcc
-                print("false por no existir truth assigment") ### TODO PRINT QUITAR 
-                #print("\n\nCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
+                info["failing_tcc"] = tcc
+                info["failing_reason"] = "No truth assignment"
                 return False, info
             
             rel_lt, info = self.compute_lt(
                 tcc, truth_assign, fundamental_cycles, info
                 )
+            info["rel_lt"] = rel_lt
             
-            print("finished rel_t") ### TODO PRINT QUITAR
             peripheral_basis, info = self.get_peripheral_basis(
                 rel_lt, fundamental_cycles, info
                 )     
             info["periph_basis"] = peripheral_basis
         
-            print("finished periph basis") ### TODO PRINT QUITAR
-            
             plane_mesh = self.get_plane_mesh(peripheral_basis)
             info["plane_mesh"] = plane_mesh
             
             edges_count = {edge: 0 for edge in tcc.edges()}
             info["edges_count"] = edges_count
-            #print(edges_count)  ### TODO PRINT QUITAR
             for cycle in plane_mesh:
                 for edge in cycle:
                     if edge in edges_count:
@@ -850,33 +748,18 @@ class PlanarityCriterion:  # TODO COMENTAR
                     elif (edge[1], edge[0]) in edges_count:
                         edges_count[(edge[1], edge[0])] += 1
                     else: 
-                        #print(cycle)  ### TODO PRINT QUITAR ### TODO REVISAR ESTO BIEN CON EL PAPER
-                        print("false por edge de ciclo malo") ### TODO PRINT QUITAR 
-                        #print("\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
+                        #print(cycle)  ### TODO PRINT QUITAR ### TODO REVISAR ESTO BIEN CON EL PAPER  Y QUE ES NECESARIO
                         return False, info
                     
             for edge, count in edges_count.items():
                 if count != 2:
                     info["failing tcc"] = tcc
                     info["failing edge"] = edge
+                    info["failing_reason"] = "Bad plane mesh"
                     info["edges_count"] = edges_count
-                    #print("implications", info["implications"])
-                    #print(bridges)
-                    #print("edge map", info["edge_index_map"])
-                    #print("cycle map", info["cycle_index_map"])
-                    # print("REL IN", info["rel_in"])
-                    # print("rel lt", rel_lt)
-                    #print( fundamental_cycles)### TODO PRINT QUITAR 
-                    # print("periph basis", peripheral_basis)### TODO PRINT QUITAR 
-                    # print("plane mesh", plane_mesh)### TODO PRINT QUITAR 
-                    # print(edges_count)### TODO PRINT QUITAR 
-                    print("false por plane mesh mala") ### TODO PRINT QUITAR 
-                    #print("\n\nBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n")
                     return False, info
-        # print(info)
-        # print("REL IN", info["rel_in"]) ### TODO PRINT QUITAR
-        # print("rel lt", rel_lt)
         return True, info
+    
     
    
 """   
@@ -1137,5 +1020,197 @@ def is_planar(plane_mesh) ### TODO este algorigmo vale solo para plane meshes qu
     return True
 
 print("Graph G planar: ", is_planar(plane_mesh))
-      
+
 """
+
+
+    
+"""        
+### FUNCIONES ANTIGUAS DE 2CNF PARA HACERLO CON LISTAS COMO EN EL PAPER CON LA CLASE DEL FINAL DEL ARCHIVO ###        
+#####################################################################################################################        
+        
+    ### Auxiliar functions for getting 2 CNF conditions ###
+
+    def __update_cond_a1(
+            self, G, fundamental_cycles, bridges_all_cycles, edge_index_map, 
+            CNF_lists
+            ):
+        for c_index, c in enumerate(fundamental_cycles):
+            for bridge in bridges_all_cycles[tuple(c)]:
+                # Usamos directamente las aristas del puente
+                for edge1, edge2 in combinations(bridge["edges"], 2):
+                    # TODO PENSAR SI ES MEJOR METER ÍNDICES  AÑADIR CON RESPECTO A CICLO
+                    e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
+                    # CNF_lists[e1][c_index][0].add(e2)
+                    # CNF_lists[e2][c_index][0].add(e1)
+                    # CNF_lists[e1][c_index][3].add(e2)
+                    # CNF_lists[e2][c_index][3].add(e1)
+                    CNF_lists[e1][c_index][0].add((edge2, c_index))
+                    # TODO PENSAR SI ES MEJOR METER ÍNDICES dentro de las listas
+                    CNF_lists[e2][c_index][0].add((edge1, c_index))
+                    CNF_lists[e1][c_index][3].add((edge2, c_index))
+                    CNF_lists[e2][c_index][3].add((edge1, c_index))
+        return CNF_lists
+
+    # TODO AQUÍ CREO QUE ES DONDE SE AÑADEN LOS EDGES EN ORDEN CONTRARIO
+    def get_edges_cycle1(self, c):
+        edges = []
+        for i in range(len(c) - 1):
+            edge = [c[i], c[i + 1]]
+            edge.sort()
+            edges.append(tuple(edge))
+        return edges
+
+    def __update_cond_b1(self, G, fundamental_cycles, edge_index_map, 
+                        cycle_index_map, CNF_lists):
+        # TODO CHEQUEAR BIEN ESTA CONDICIÓN
+        for c1, c2 in combinations(fundamental_cycles, 2):
+            c1_edges = self.get_edges_cycle1(c1)
+            c2_edges = self.get_edges_cycle1(c2)
+            c1_not_c2 = [edge for edge in c1_edges if edge not in c2_edges]
+            c2_not_c1 = [edge for edge in c2_edges if edge not in c1_edges]
+            # print(c1,c1_edges,c2, c2_edges)###
+            for edge1 in c1_not_c2:
+                for edge2 in c2_not_c1:
+                    # print(edge1, edge2)###
+                    e1, e2 = edge_index_map[edge1], edge_index_map[edge2]
+                    # PN # edge2 respecto C1 ###TODO REVISAR PORQUE AQUÍ TIENE QUE SER CON RESPECTO A DISTINTO CICLO LA QUE SE AÑADE EN LA LISTA PONER CICLOS EN EL RESTO
+                    CNF_lists[e1][cycle_index_map[tuple(c2)]][1].add(
+                        (edge2, cycle_index_map[tuple(c1)]))
+                    # PN # edge1 respecto C2 ###TODO REVISAR PORQUE AQUÍ TIENE QUE SER CON RESPECTO A DISTINTO CICLO LA QUE SE AÑADE EN LA LISTA
+                    CNF_lists[e2][cycle_index_map[tuple(c1)]][1].add(
+                        (edge1, cycle_index_map[tuple(c2)]))
+                    # TODO REVISAR SI METER ÍNDICES DE EDGES
+        return CNF_lists
+
+    # Auxiliar functions for condition c)
+
+    def __conflict_type_1_1(self, bridge_pair, c):
+        common_att_vert = 0
+        for vertex in bridge_pair[0]["att_ver"]:
+            if vertex in bridge_pair[1]["att_ver"]:
+                common_att_vert += 1
+                if common_att_vert >= 3:
+                    return True  # TODO REVISAR ESTE BREAK
+        return common_att_vert >= 3
+
+    # TODO checkear que los ciclos siempre entran aquí ordenados
+    def __conflict_type_2_1(self, bridge_pair, c):
+        matching_seq = 0
+
+        # Look for the pattern starting on attachment vertices of both pairs
+
+        # print("#################")
+        # print(bridge_pair, c)
+        for node in c[0:len(c) - 1]:
+            # print()
+            # print(node)
+            # print(matching_seq)
+            if (node in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 0:
+                matching_seq += 1
+                # print(matching_seq)
+                if matching_seq >= 4:
+                    return True
+            elif (node in bridge_pair[1]["att_ver"]) and matching_seq % 2 == 1:
+                matching_seq += 1
+                # print(matching_seq)
+                if matching_seq >= 4:
+                    return True
+
+        # Treat last node of the cycle differently. Otherwise, there can be errors if the starting node
+        # of the cycle is of attachment of both bridges.
+        if (c[len(c) - 1] in bridge_pair[1]["att_ver"]) and matching_seq % 2 == 1 and (c[len(c) - 1] not in bridge_pair[0]["att_ver"]):
+            matching_seq += 1
+            # print(matching_seq)
+            if matching_seq >= 4:
+                return True
+
+        matching_seq = 0
+        for node in c[0:len(c) - 1]:
+            # print()
+            # print(node)
+            # print(matching_seq)
+            if (node in bridge_pair[1]["att_ver"]) and matching_seq % 2 == 0:
+                matching_seq += 1
+                # print(matching_seq)
+                if matching_seq >= 4:
+                    return True
+            elif (node in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 1:
+                matching_seq += 1
+                # print(matching_seq)
+                # print(matching_seq >= 4)
+                if matching_seq >= 4:
+                    return True  # TODO ALGUNOS DE ESTOS SOBRAN SEGÚN LOS MÓDULOS
+
+        # Treat last node of the cycle differently. Otherwise, there can be errors if the starting node
+        # of the cycle is of attachment of both bridges.
+        if (c[len(c) - 1] in bridge_pair[0]["att_ver"]) and matching_seq % 2 == 1 and (c[len(c) - 1] not in bridge_pair[1]["att_ver"]):
+            matching_seq += 1
+            if matching_seq >= 4:
+                return True
+
+        return matching_seq >= 4
+
+    def __conflict_between1(self, bridge_pair, c):
+        # print("conflict:", c, bridge_pair,"---", conflict_type_1(bridge_pair, c), conflict_type_2(bridge_pair, c))
+        return self.__conflict_type_1_1(bridge_pair, c) or self.__conflict_type_2_1(bridge_pair, c)
+
+    def __update_cond_c1(
+            self, G, fundamental_cycles, bridges_all_cycles, edge_index_map,
+            CNF_lists
+            ):
+        for c_index, c in enumerate(fundamental_cycles):
+            for bridge1, bridge2 in combinations(bridges_all_cycles[tuple(c)], 2):
+                if self.__conflict_between1((bridge1, bridge2), c):
+                    for edge1 in bridge1["edges"]:
+                        for edge2 in bridge2["edges"]:
+                            e1, e2 = edge_index_map[edge1], edge_index_map[edge2] ### TODO VER SI ES MEJOR METERLO CON INDICES Y AÑADIR CICLOS  AQUÍ
+                            # CNF_lists[e1][c_index][1].add(e2)
+                            # CNF_lists[e1][c_index][2].add(e2)
+                            # CNF_lists[e2][c_index][1].add(e1)
+                            # CNF_lists[e2][c_index][2].add(e1)
+                            # print("writing conflict between", e1, e2)
+                            CNF_lists[e1][c_index][0].add((edge2, c_index))  ### TODO VER SI ES MEJOR METERLO CON INDICES
+                            CNF_lists[e2][c_index][0].add((edge1, c_index))
+                            CNF_lists[e1][c_index][3].add((edge2, c_index))
+                            CNF_lists[e2][c_index][3].add((edge1, c_index))
+        return CNF_lists
+
+    def get_2_CNF1(self, G, fundamental_cycles, bridges_all_cycles):
+        # Asignamos índices únicos a las aristas del grafo
+        # edge_index_map = {edge: i for i, edge in enumerate(G.edges())} ### TODO VER DONDE CAMBIAN DE DIRECCIÓN LOS EDGES Y USAR ESTE INDEX MAP
+        # Assign unique indices to edges in the order they appear in G.edges(), w1ith both orientations stored
+        edge_index_map = {}
+        for i, edge in enumerate(G.edges()):
+            edge_index_map[edge] = i
+            # Store reversed edge as well
+            edge_index_map[(edge[1], edge[0])] = i
+
+        cycle_index_map = {}
+        for i, c in enumerate(fundamental_cycles):
+            cycle_index_map[tuple(c)] = i
+
+        # Estructura CNF_lists basada en edges
+        CNF_lists = [[[set([]) for _ in range(4)] for _ in range(
+            len(fundamental_cycles))] for _ in range(len(G.edges()))]
+        # 0 PP
+        # 1 PN
+        # 2 NP
+        # 3 NN
+        
+        ### TODO INCLUIR AQUÍ REFERENCIA DE CONDICIONES A B C EN EL PAPER
+        CNF_lists = self.__update_cond_a1(G, fundamental_cycles,
+                                       bridges_all_cycles, edge_index_map, 
+                                       CNF_lists)
+        
+        CNF_lists = self.__update_cond_b1(G, fundamental_cycles, edge_index_map, 
+                                       cycle_index_map, CNF_lists)
+        
+        CNF_lists = self.__update_cond_c1(G, fundamental_cycles,
+                                       bridges_all_cycles, edge_index_map, 
+                                       CNF_lists)
+        return CNF_lists
+    
+    ### FIN FUNCIONES ANTIGUAS DE 2CNF PARA HACERLO CON LISTAS COMO EN EL PAPER CON LA CLASE DEL FINAL DEL ARCHIVO ###        
+    #####################################################################################################################   
+""" 

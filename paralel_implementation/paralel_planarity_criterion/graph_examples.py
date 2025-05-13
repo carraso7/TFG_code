@@ -6,7 +6,7 @@ from triconnected_components import TriconnectedFinder
 class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
 
     @staticmethod
-    def get_examples():
+    def get_examples(): ### TODO METER EJEMPLOS APROPIADOS PARA PLANAR PRINTER Y PARA PLANAR CRIT DISTINTOS, CON COMPONENTES TRICO MÁS GRANDES, COMO CON DODECAEDROS O COSAS ASÍ EN EL EXTERIOR
         ### MAKE GRAPH EXAMPLES ###
         graph_examples = []
         
