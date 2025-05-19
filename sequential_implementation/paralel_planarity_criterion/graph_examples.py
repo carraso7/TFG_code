@@ -188,6 +188,7 @@ class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
         contracted = nx.contracted_nodes(contracted, 6, 0, self_loops=False)
         graph_examples.append(contracted)
         
+        # Create the graph that fails in triconnected components
         edges = [
             (0, 2), (0, 3), (0, 4), (0, 5),
             (1, 3), (1, 4), (1, 5),
@@ -197,11 +198,64 @@ class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
             (2, 7), (4, 7)
         ]
         
-        # Create the graph that fails in triconnected components
         failing_graph = nx.Graph()
         failing_graph.add_edges_from(edges)
         
         graph_examples.append(failing_graph)
+        
+        ## GRAPH WITH CHAIN
+        edges = [
+            (0, 1), (0, 2), (0, 3), (0, 7),
+            (1, 2), (1, 3),
+            (2, 3),
+            (3, 4), (4, 5), (5, 6), (6, 7),
+        ]
+        
+        chain_graph = nx.Graph()
+        chain_graph.add_edges_from(edges)
+        graph_examples.append(chain_graph)
+        
+        ## GRAPH WITH CHAIN
+        edges = [
+            (0, 1), (0, 2), (0, 4),
+            (1, 2), (1, 3),
+            (2, 3),
+            (3, 4),
+        ]
+        
+        chain_graph2 = nx.Graph()
+        chain_graph2.add_edges_from(edges)
+        graph_examples.append(chain_graph2)
+        
+        ## GRAPH WITH CHAIN
+        edges = [
+            (0, 1), (0, 2), (0, 3), (0, 7),
+            (1, 2), (1, 3),
+            (2, 3),
+            (3, 4), (4, 5), (5, 6), (6, 7),
+            (5, 8), (5, 9),
+            (6, 8), (6, 9),
+            (8, 9)
+        ]
+        
+        chain_graph3 = nx.Graph()
+        chain_graph3.add_edges_from(edges)
+        graph_examples.append(chain_graph3)
+     
+        ## GRAPH WITH CHAIN
+        edges = [
+            (0, 1), (0, 2), (0, 7),
+            (1, 2), (1, 3),
+            (2, 3),
+            (3, 4), (4, 5), (6, 7),
+            (5, 8), (5, 9),
+            (6, 8), (6, 9),
+            (8, 9)
+        ]
+        
+        chain_graph4 = nx.Graph()
+        chain_graph4.add_edges_from(edges)
+        graph_examples.append(chain_graph4)
 
         return graph_examples
     
