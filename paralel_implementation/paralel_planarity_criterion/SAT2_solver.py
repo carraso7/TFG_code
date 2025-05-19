@@ -22,7 +22,7 @@ def print_B_matrix(matrix, name):
 
 class SAT2_solver:
         
-    def __mult_matrix_or_and(self, A, B):  ## TODO CHEQUEAR Y TMBN CHEQUEAR DOC
+    def mult_matrix_or_and(self, A, B):  ## TODO CHEQUEAR Y TMBN CHEQUEAR DOC NO ES PRIVADO PARA PRUEBAS DE PARALELIZACIÓN
         """
         Multiply two binary square matrices A and B using logical AND (for multiplication)
         and logical OR (for summation), returning a Python list of lists with 0s and 1s.
@@ -232,7 +232,7 @@ class SAT2_solver:
         A1 = adj_matrix ## TODO CHEQUEAR SI EL +1 DE ABAJO ESTÁ BIEN
         # print_matrix(A1, "A1 inicial") ### TODO PRINT QUITAR
         for _ in range(int(math.log2(n_variables * 2)) + 1): # 2*n_variables because we take the negated variables as well
-            A1 = self.__mult_matrix_or_and(A1, A1)
+            A1 = self.mult_matrix_or_and(A1, A1)
         # print_matrix(A1, "A1 final") ### TODO PRINT QUITAR
         for n_variable in range(n_variables):
             if self.__negated_same_str_component(A1, n_variables, n_variable):

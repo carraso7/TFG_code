@@ -7,6 +7,140 @@ We consider that the graph has n nodes and m edges. At most, graphs can have
 3n edges. All the complexities are calculated using n^6 processors. 
 """
 
+
+"""
+Created on May 17, 2025
+Author: Carlo
+Description:
+- Set diagonal of a matrix to 1
+- Boolean matrix multiplication using AND + OR in parallel
+"""
+
+import pyopencl as cl
+import numpy as np
+
+# ================= SETUP ==================
+platforms = cl.get_platforms()
+gpu_devices = [d for p in platforms for d in p.get_devices() if d.type & cl.device_type.GPU]
+device = gpu_devices[0]
+ctx = cl.Context([device])
+queue = cl.CommandQueue(ctx)
+print("Usando dispositivo:", device.name)
+
+# ================= USER INPUT ==================
+N = int(input("Tamaño de la matriz (N x N): "))  # e.g., 4, 16, 128, etc.
+
+# ================= KERNEL CODE ==================
+KERNEL_CODE = """
+__kernel void set_diagonal_to_one(__global char* matrix, const int N) {
+    int i = get_global_id(0);
+    if (i < N) {
+        matrix[i * N + i] = 1;
+    }
+}
+
+__kernel void partial_and_kernel(__global const char* A,
+                                 __global const char* B,
+                                 __global char* partial,
+                                 const int N) {
+    int row = get_global_id(0);
+    int col = get_global_id(1);
+    int k = get_global_id(2);
+    int idx = row * N * N + col * N + k;
+
+    if (row < N && col < N && k < N) {
+        char a_val = A[row * N + k];
+        char b_val = B[k * N + col];
+        partial[idx] = a_val & b_val;
+    }
+}
+
+__kernel void parallel_reduce_or(__global const char* partial,
+                                 __global char* output,
+                                 const int N) {
+    int row = get_global_id(0);
+    int col = get_global_id(1);
+    int lid = get_local_id(2);
+    int group_size = get_local_size(2);
+    int offset = row * N * N + col * N;
+
+    __local char temp[2048];  // Can be adjusted if needed
+
+    if (lid < N)
+        temp[lid] = partial[offset + lid];
+    else
+        temp[lid] = 0;
+
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for (int s = group_size / 2; s > 0; s >>= 1) {
+        if (lid < s) {
+            temp[lid] = temp[lid] | temp[lid + s];
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    if (lid == 0)
+        output[row * N + col] = temp[0];
+}
+"""
+
+# ================= BUILD & SETUP ==================
+program = cl.Program(ctx, KERNEL_CODE).build()
+mf = cl.mem_flags
+
+# ================= EXAMPLE 1: Set Diagonal ==================
+print("\n=== EJEMPLO 1: PONER DIAGONAL EN 1 ===")
+A1 = np.random.randint(0, 2, size=(N, N)).astype(np.int8)
+print("Matriz original A:")
+print(A1)
+
+A1_buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=A1)
+program.set_diagonal_to_one(queue, (N,), None, A1_buf, np.int32(N))
+queue.finish()
+
+A1_result = np.empty_like(A1)
+cl.enqueue_copy(queue, A1_result, A1_buf)
+print("Matriz con diagonal en 1:")
+print(A1_result)
+
+# ================= EXAMPLE 2: Boolean Matrix Product ==================
+print("\n=== EJEMPLO 2: MULTIPLICACIÓN BOOLEAN ===")
+A2 = np.random.randint(0, 2, size=(N, N)).astype(np.int8)
+B2 = np.random.randint(0, 2, size=(N, N)).astype(np.int8)
+C2 = np.zeros((N, N), dtype=np.int8)
+
+print("Matriz A:")
+print(A2)
+print("Matriz B:")
+print(B2)
+
+# Buffers
+A2_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=A2)
+B2_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=B2)
+partial_buf = cl.Buffer(ctx, mf.READ_WRITE, size=N * N * N)
+C2_buf = cl.Buffer(ctx, mf.WRITE_ONLY, size=C2.nbytes)
+
+# Execute partial AND kernel
+program.partial_and_kernel(queue, (N, N, N), None, A2_buf, B2_buf, partial_buf, np.int32(N))
+queue.finish()
+
+# Use local size = N if it's not too large, or the next power of 2
+local_z = 1
+while local_z < N:
+    local_z <<= 1
+local_z = min(local_z, 1024)  # cap for local memory
+
+# Execute OR reduction
+program.parallel_reduce_or(queue, (N, N, local_z), (1, 1, local_z), partial_buf, C2_buf, np.int32(N))
+queue.finish()
+
+cl.enqueue_copy(queue, C2, C2_buf)
+print("Resultado C (A AND B -> OR):")
+print(C2)
+
+
+
 ### TODO Falta anotar todo el cálculo de complejidad
 
 import networkx as nx

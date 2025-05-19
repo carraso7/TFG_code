@@ -455,4 +455,206 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
     
         plt.show()
         """
+        
+class SPQR_drawer():
+
+    @staticmethod
+    def plot_SPQR_visuals(G, edges_dict, SPQR_tree, save=False,
+                          name="SPQR_tree", dir_name="images"
+                          ):
+        """
+        Plots the SPQR tree and the full graph with SPQR tree edges highlighted.
     
+        Parameters
+        ----------
+        G : networkx.Graph
+            The original graph.
+        TCCs : list of dicts
+            Triconnected components (output from triconnected_comps).
+        """
+        real_edges = set(edges_dict["real_edges"])
+        virtual_edges = set(edges_dict["virtual_edges"])
+    
+        pos = nx.spring_layout(G, seed=42)  # Same layout for both plots
+    
+        # === 1. Plot SPQR tree ===
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 2, 1)
+        plt.title("SPQR Tree")
+    
+        nx.draw_networkx_nodes(SPQR_tree, pos, node_color='lightblue', edgecolors='k')
+        nx.draw_networkx_labels(SPQR_tree, pos)
+    
+        # Draw real edges (solid grey)
+        nx.draw_networkx_edges(SPQR_tree, pos, edgelist=real_edges, edge_color='grey', style='solid', width=2)
+        # Draw virtual edges (dashed grey)
+        nx.draw_networkx_edges(SPQR_tree, pos, edgelist=virtual_edges, edge_color='grey', style='dashed', width=2)
+    
+        plt.axis('off')
+    
+        # === 2. Plot original graph with SPQR tree edges styled ===
+        plt.subplot(1, 2, 2)
+        plt.title("Graph G with SPQR Tree Edges Highlighted")
+    
+        nx.draw_networkx_nodes(G, pos, node_color='lightblue', edgecolors='k')
+        nx.draw_networkx_labels(G, pos)
+    
+        # Non-tree edges (black)
+        other_edges = [e for e in G.edges() if (e not in real_edges and tuple(reversed(e)) not in real_edges
+                                                and e not in virtual_edges and tuple(reversed(e)) not in virtual_edges)]
+        nx.draw_networkx_edges(G, pos, edgelist=other_edges, edge_color='grey', style='solid', width=1.5)
+    
+        # Tree real edges (solid grey)
+        nx.draw_networkx_edges(G, pos, edgelist=real_edges, edge_color='black', style='solid', width=2)
+    
+        # Tree virtual edges (dashed grey)
+        nx.draw_networkx_edges(G, pos, edgelist=virtual_edges, edge_color='black', style='dashed', width=2)
+    
+        plt.axis('off')
+        plt.tight_layout()
+        
+        if save:
+            os.makedirs(dir_name, exist_ok=True)
+    
+            # Set the save path (always PNG)
+            save_path = os.path.join(dir_name, f'{name}.png')
+            plt.savefig(save_path, bbox_inches='tight')
+            print(f"Image saved to: {save_path}")
+        
+        plt.show()
+        
+    @staticmethod
+    def plot_SPQR_and_TCC(G, TCCs, edges_dict, SPQR_tree, save=False,
+                          name="SPQR_and_TCC", dir_name="images"
+                          ):
+        import matplotlib.pyplot as plt
+        import networkx as nx
+        import os
+        import textwrap
+    
+        real_edges = set(tuple(sorted(e)) for e in edges_dict["real_edges"])
+        virtual_edges = set(tuple(sorted(e)) for e in edges_dict["virtual_edges"])
+    
+        # Maps from nodes/edges to the TCCs they belong to
+        node_classes = {}
+        edge_classes = {}
+        virtual_edge_classes = {}
+    
+        for idx, tcc in enumerate(TCCs):
+            nodes = tcc["node_list"]
+            virt_edges = tcc["virtual_edges"]
+    
+            for node in nodes:
+                node_classes.setdefault(node, []).append(idx)
+    
+            for edge in G.edges():
+                if edge[0] in nodes and edge[1] in nodes:
+                    edge_norm = tuple(sorted(edge))
+                    edge_classes.setdefault(edge_norm, []).append(idx)
+    
+            for v_edge in virt_edges:
+                v_edge_norm = tuple(sorted(v_edge))
+                virtual_edge_classes.setdefault(v_edge_norm, []).append(idx)
+    
+        num_components = len(TCCs)
+        color_map = plt.cm.get_cmap("tab10", num_components)
+    
+        # Identify all nodes involved in SPQR tree edges
+        tree_nodes = {n for edge in real_edges.union(virtual_edges) for n in edge}
+    
+        # Assign node colors and label colors
+        node_colors = []
+        label_colors = {}
+        for node in G.nodes():
+            if node in tree_nodes:
+                node_colors.append("black")
+                label_colors[node] = "white"
+            elif node not in node_classes:
+                node_colors.append("lightgray")
+                label_colors[node] = "black"
+            elif len(node_classes[node]) > 1:
+                node_colors.append("gray")
+                label_colors[node] = "black"
+            else:
+                node_colors.append(color_map(node_classes[node][0]))
+                label_colors[node] = "black"
+    
+        # Assign edge colors and styles
+        edge_colors = []
+        edge_widths = []
+        edge_styles = []
+    
+        for edge in G.edges():
+            e = tuple(sorted(edge))
+            if e in real_edges:
+                edge_colors.append("black")
+                edge_widths.append(3)
+                edge_styles.append("solid")
+            elif e in virtual_edges:
+                edge_colors.append("black")
+                edge_widths.append(3)
+                edge_styles.append("dashed")
+            elif e not in edge_classes:
+                edge_colors.append("lightgray")
+                edge_widths.append(1.5)
+                edge_styles.append("solid")
+            elif len(edge_classes[e]) > 1:
+                edge_colors.append("gray")
+                edge_widths.append(1.5)
+                edge_styles.append("solid")
+            else:
+                edge_colors.append(color_map(edge_classes[e][0]))
+                edge_widths.append(1.5)
+                edge_styles.append("solid")
+    
+        # --- Drawing ---
+        fig, ax = plt.subplots(figsize=(8, 6))
+        pos = nx.spring_layout(G, seed=42)
+    
+        # Draw nodes
+        nx.draw_networkx_nodes(G, pos, node_color=node_colors, edgecolors='k', node_size=600)
+    
+        # Draw node labels
+        for node, (x, y) in pos.items():
+            plt.text(x, y, str(node), ha='center', va='center', color=label_colors[node])
+    
+        # Draw edges
+        for (edge, color, width, style) in zip(G.edges(), edge_colors, edge_widths, edge_styles):
+            x0, y0 = pos[edge[0]]
+            x1, y1 = pos[edge[1]]
+            ax.plot([x0, x1], [y0, y1], color=color, linewidth=width, linestyle=style, zorder=0)
+    
+        # Draw virtual edges (not in G but referenced in TCCs)
+        for v_edge, classes in virtual_edge_classes.items():
+            if not G.has_edge(*v_edge):
+                x0, y0 = pos[v_edge[0]]
+                x1, y1 = pos[v_edge[1]]
+                color = "black" if v_edge in virtual_edges else (
+                    "gray" if len(classes) > 1 else color_map(classes[0]))
+                style = "dashed"
+                width = 3 if v_edge in virtual_edges else 1.5
+                ax.plot([x0, x1], [y0, y1], linestyle=style, color=color, linewidth=width)
+    
+        plt.title("Graph with SPQR Tree (Black) and Triconnected Components")
+        plt.axis('off')
+    
+        # Sidebar list of TCCs
+        formatted_ncc_list = []
+        for i, component in enumerate(TCCs):
+            comp_nodes = sorted(list(component["node_list"]))
+            comp_str = f"TCC {i+1}: {comp_nodes}"
+            wrapped_lines = textwrap.wrap(comp_str, width=40)
+            formatted_ncc_list.extend(wrapped_lines)
+    
+        subtitle_text = "\n".join(formatted_ncc_list)
+        plt.figtext(0.02, 0.5, subtitle_text, wrap=True, horizontalalignment='left',
+                    verticalalignment='center', fontsize=10)
+    
+        if save:
+            os.makedirs(dir_name, exist_ok=True)
+            path = os.path.join(dir_name, f"{name}.png")
+            plt.savefig(path, bbox_inches="tight")
+    
+        plt.show()
+
+
