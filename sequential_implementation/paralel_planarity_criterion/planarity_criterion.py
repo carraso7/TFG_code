@@ -672,7 +672,7 @@ class PlanarityCriterion:  # TODO Pensar si dejar como clase
         return plane_mesh
     
     
-    def is_planar(self, G):
+    def is_planar(self, G): ### TODO GESTIONAR BIEN LO DE LA INFO PARA CADA COMPONENTE
         """
         Determines if the graph G is planar using Mac Lane criterion as stated
         in ### TODO INCLUIR REFERENCIA
@@ -698,7 +698,10 @@ class PlanarityCriterion:  # TODO Pensar si dejar como clase
         # if all its components are. 
         finder = TCC.TriconnectedFinder()
         TCCs, info = finder.triconnected_comps(G)
+        info["TCCs"] = TCCs
+        info["planarity_info"] = []
         for tcc_list in TCCs:
+            TCC_info = {}
             tcc = G.subgraph(tcc_list["node_list"]).copy()
 
             # Add virtual edges to each tcc
@@ -710,37 +713,40 @@ class PlanarityCriterion:  # TODO Pensar si dejar como clase
             
             bridges = self.get_bridges(tcc, fundamental_cycles)
             
-            truth_assign, info = self.get_truth_assigment(
+            truth_assign, TCC_info = self.get_truth_assigment(
                 tcc, fundamental_cycles, bridges
                 )
             # Init info dictionary
-            info["truth_assign"] = truth_assign
+            TCC_info["spanning_tree"] = spanning_tree
+            TCC_info["fundamental_cycles"] = fundamental_cycles
+            TCC_info["bridges"] = bridges
+            TCC_info["truth_assign"] = truth_assign
+            TCC_info["rel_in"] = "No info"
             info["Failing_tcc"] = "No info"
-            info["rel_in"] = "No info"
-            info["failing_tcc"] = "No info"
             info["failing_reason"] = "No info"
             info["failing edge"] = "No info"
             
             if truth_assign is None:
                 info["failing_tcc"] = tcc
                 info["failing_reason"] = "No truth assignment"
+                info["planarity_info"].append(TCC_info)
                 return False, info
             
-            rel_lt, info = self.compute_lt(
-                tcc, truth_assign, fundamental_cycles, info
+            rel_lt, TCC_info = self.compute_lt(
+                tcc, truth_assign, fundamental_cycles, TCC_info
                 )
-            info["rel_lt"] = rel_lt
+            TCC_info["rel_lt"] = rel_lt
             
-            peripheral_basis, info = self.get_peripheral_basis(
-                rel_lt, fundamental_cycles, info
+            peripheral_basis, TCC_info = self.get_peripheral_basis(
+                rel_lt, fundamental_cycles, TCC_info
                 )     
-            info["periph_basis"] = peripheral_basis
+            TCC_info["periph_basis"] = peripheral_basis
         
             plane_mesh = self.get_plane_mesh(peripheral_basis)
-            info["plane_mesh"] = plane_mesh
+            TCC_info["plane_mesh"] = plane_mesh
             
             edges_count = {edge: 0 for edge in tcc.edges()}
-            info["edges_count"] = edges_count
+            TCC_info["edges_count"] = edges_count
             for cycle in plane_mesh:
                 for edge in cycle:
                     if edge in edges_count:
@@ -749,6 +755,7 @@ class PlanarityCriterion:  # TODO Pensar si dejar como clase
                         edges_count[(edge[1], edge[0])] += 1
                     else: 
                         #print(cycle)  ### TODO PRINT QUITAR ### TODO REVISAR ESTO BIEN CON EL PAPER  Y QUE ES NECESARIO
+                        info["planarity_info"].append(TCC_info)
                         return False, info
                     
             for edge, count in edges_count.items():
@@ -756,8 +763,12 @@ class PlanarityCriterion:  # TODO Pensar si dejar como clase
                     info["failing tcc"] = tcc
                     info["failing edge"] = edge
                     info["failing_reason"] = "Bad plane mesh"
-                    info["edges_count"] = edges_count
+                    TCC_info["edges_count"] = edges_count
+                    info["planarity_info"].append(TCC_info)
                     return False, info
+                
+            info["planarity_info"].append(TCC_info)
+            
         return True, info
     
     

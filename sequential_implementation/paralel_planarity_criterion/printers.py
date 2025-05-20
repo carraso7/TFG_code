@@ -217,6 +217,18 @@ class Printer:
     def print_B_matrix(matrix, name):
         n = len(matrix)
         print(f"\n{name}:")
+    
+        # Print column headers
+        header = "   " + ' '.join(f"{j:2}" for j in range(n))
+        print(header)
+    
+        # Print each row with its index
+        for i, row in enumerate(matrix):
+            row_str = f"{i:2}|" + ' '.join(f"{' -' if elem == float('-inf') else f'{elem:2}'}" for elem in row)
+            print(row_str)
+    def print_B_matrix1(matrix, name):
+        n = len(matrix)
+        print(f"\n{name}:")
 
         # Print column headers
         header = "   " + ' '.join(f"{j:2}" for j in range(n))
