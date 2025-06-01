@@ -278,7 +278,7 @@ def get_embbeding(G):
     # draw_graph_with_coordinates(G, merged, title="Merged Global Embedding")
     # print()
     
-    return planar_list, coordinates_list
+    return all(planar_list), coordinates_list
 
 
 def get_embbeding_not_TCC(G):
