@@ -16,6 +16,8 @@ import networkx as nx
 
 import numpy as np
 
+import os
+
 
 def rigid_merge_tcc_coordinates(coord_lists):
     """
@@ -67,7 +69,11 @@ def rigid_merge_tcc_coordinates(coord_lists):
 
 
 
-def draw_graph_with_coordinates(G, coordinates, title="Graph Embedding", show_labels=True, virtual_edges=[]):
+def draw_graph_with_coordinates(G, coordinates, title="Graph Embedding", 
+                                show_labels=True, virtual_edges=[], 
+                                save=False, name="triconnected drawing", 
+                                dir_name="images"
+                                ):
     """
     Plots the graph G using the provided coordinates, with optional virtual edges as dashed lines.
 
@@ -113,7 +119,19 @@ def draw_graph_with_coordinates(G, coordinates, title="Graph Embedding", show_la
 
     plt.title(title)
     plt.axis('equal')
+    
+        
+    if save:
+        os.makedirs(dir_name, exist_ok=True)
+
+        # Set the save path (always PNG)
+        print(f'{name}')
+        save_path = os.path.join('images', f'{name}.png')
+        plt.savefig(save_path, bbox_inches='tight')
+        print(f"Saved to {save_path}")
+    
     plt.show()
+
 
 
 def get_regular_polygon_positions(peripheral_cycle):
@@ -199,7 +217,7 @@ def periph_c_to_embedding(G, peripheral_cycle):
     return True, coordinates
 
 
-def get_embbeding(G):
+def get_embbeding(G, save=False, name="triconnected drawing"):
     if (len(G.edges()) > 3 * len(G.nodes()) - 6):
         return False, None ###TODO GESTIONAR RETURNS DE INFO, TODOS LOS DICTS CON LAS MISMAS ENTRADAS
     finder = TCC.TriconnectedFinder()
@@ -212,7 +230,7 @@ def get_embbeding(G):
     
     criterion = planarity_criterion.PlanarityCriterion()
     
-    for tcc_list in TCCs:
+    for i, tcc_list in enumerate(TCCs):
         #print("tcc list", tcc_list)
         # Extract the subgraph
         tcc = G.subgraph(tcc_list["node_list"]).copy()
@@ -249,7 +267,8 @@ def get_embbeding(G):
         peripheral_cycle = criterion.edges_to_cycle(peripheral_basis[0])
         planar, coordinates = periph_c_to_embedding(tcc, peripheral_cycle)
         draw_graph_with_coordinates(tcc, coordinates, 
-                                    virtual_edges=tcc_list["virtual_edges"]
+                                    virtual_edges=tcc_list["virtual_edges"],
+                                    save=save, name=name + str(i)
                                     )
         coordinates_list.append(coordinates)
         planar_list.append(planar)
@@ -328,8 +347,7 @@ def get_embbeding_not_TCC(G):
                 # Completely isolated and unplaced: put at origin or random
                 coordinates[node] = (0.0, 0.0)
     
-    
-    draw_graph_with_coordinates(G, coordinates)
+    draw_graph_with_coordinates(G, coordinates, save=True)
 
         
 

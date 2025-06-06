@@ -208,11 +208,12 @@ class Printer:
         # Print each row
         for row in range(num_cycles):
             cycle = str(cycle_indices[row])
-            row_values = boolean_list[row * num_edges: (row + 1) * num_edges]
-            row_str = cycle.ljust(first_col_width)
-            for col, val in enumerate(row_values):
-                row_str += ('True' if val else 'False').ljust(col_widths[col])
-            print(row_str)
+            if (boolean_list): #### TODO VER CASOS EN LOS QUE NO EXISTE
+                row_values = boolean_list[row * num_edges: (row + 1) * num_edges]
+                row_str = cycle.ljust(first_col_width)
+                for col, val in enumerate(row_values):
+                    row_str += ('True' if val else 'False').ljust(col_widths[col])
+                print(row_str)
             
     def print_B_matrix(matrix, name):
         n = len(matrix)
