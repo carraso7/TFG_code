@@ -52,21 +52,6 @@ class Printer:
         """
         Draws a cycle of a graph with all its bridges with different colors.
 
-        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
-        ----------
-        G : TYPE
-            DESCRIPTION.
-        bridges_all_cycles : TYPE
-            DESCRIPTION.
-        cycle : TYPE
-            DESCRIPTION.
-        save : TYPE, optional
-            DESCRIPTION. The default is False.
-        name : TYPE, optional
-            DESCRIPTION. The default is "cycle and bridges".
-        dir_name : TYPE, optional
-            DESCRIPTION. The default is "images".
-
         Returns
         -------
         None.
@@ -119,18 +104,6 @@ class Printer:
         """
         Prints all the bridges of each cycle with different colors.
 
-        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
-        ----------
-        G : TYPE
-            DESCRIPTION.
-        bridges_all_cycles : TYPE
-            DESCRIPTION.
-        save : TYPE, optional
-            DESCRIPTION. The default is False.
-        name : TYPE, optional
-            DESCRIPTION. The default is "cycle and bridges".
-        dir_name : TYPE, optional
-            DESCRIPTION. The default is "images".
 
         Returns
         -------
@@ -153,7 +126,7 @@ class Printer:
             print(f"\nCycle {c_index} (Nodes: {cycle}):")
             for edge, edge_index in edge_index_map.items():
                 cnf_conditions = CNF_lists[edge_index][c_index]
-                if any(cnf_conditions) and edge[0] < edge[1]:  # Solo imprimir edges que tienen condiciones ###  TODO QUITAR EL AND CUANDO LOS EDGES TENGAN MISMO ORDEN, VIENE DE EDGES DESORDENADOS
+                if any(cnf_conditions) and edge[0] < edge[1]:  
                     print(f"  Edge {edge_index}: {edge}")
                     print(f"    PP_c,e (Positive-Positive): {cnf_conditions[0]}")
                     print(f"    PN_c,e (Positive-Negative): {cnf_conditions[1]}")
@@ -165,14 +138,6 @@ class Printer:
         """
         Prints a truth assigment as a table of boolean variables.
 
-        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
-        ----------
-        boolean_list : TYPE
-            DESCRIPTION.
-        edge_map : TYPE
-            DESCRIPTION.
-        cycle_map : TYPE
-            DESCRIPTION.
 
         Returns
         -------
@@ -208,7 +173,7 @@ class Printer:
         # Print each row
         for row in range(num_cycles):
             cycle = str(cycle_indices[row])
-            if (boolean_list): #### TODO VER CASOS EN LOS QUE NO EXISTE
+            if (boolean_list):
                 row_values = boolean_list[row * num_edges: (row + 1) * num_edges]
                 row_str = cycle.ljust(first_col_width)
                 for col, val in enumerate(row_values):
@@ -240,9 +205,7 @@ class Printer:
             row_str = f"{i:2}|" + ' '.join(f"{'-' if elem == float('-inf') else f'{elem:2}'}" for elem in row)
             print(row_str)
 
-### TODO UTILIZAR ESTA CLASE EN LUGAR DE LA DE TRICOMPONENTS EN LOS EJEMPLOS
-class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER MÁS DE UNA CLASE EN EL MISMO ARCHIVO O DEBEN ESTAR EN ARCHIVOS SEPARADOS. 
-### TODO ESCRIBIR A NETWORKX PARA VER SI QUIEREN MI LIBRERÍA
+class ConnectedComponentsDrawer(): 
 
     def print_n_connected_components(self, G, NCC, max_line_length=40, N=-1,
                                      save=False, name="connected components", 
@@ -253,22 +216,6 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
         prints the components as the definition in the paper, also called
         triconnected blocks in this case.
 
-        Parameters ### TODO ACABAR DE ESCRIBIR O QUITAR.
-        ----------
-        G : TYPE
-            DESCRIPTION.
-        NCC : TYPE
-            DESCRIPTION.
-        max_line_length : TYPE, optional
-            DESCRIPTION. The default is 40.
-        N : TYPE, optional
-            DESCRIPTION. The default is -1.
-        save : TYPE, optional
-            DESCRIPTION. The default is False.
-        name : TYPE, optional
-            DESCRIPTION. The default is "connected components".
-        dir_name : TYPE, optional
-            DESCRIPTION. The default is "images".
 
         Returns
         -------
@@ -390,15 +337,15 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
             plt.savefig(save_path, bbox_inches='tight')
     
         plt.show()
-        
-    ### IGUAL QUE EL ANTERIOR PERO ESPECIFICANDO POSICIONES    
+           
     def print_n_connected_components_fixed_positions(self, G, NCC, max_line_length=40, N=-1,
                                  save=False, name="connected components", 
                                  dir_name="images", fixed_pos=None):
         """
         Prints the N connected components of the graph. In the case N=3, it 
         prints the components as the definition in the paper, also called
-        triconnected blocks in this case.
+        triconnected blocks in this case. Fixed position of vertices are
+        allowed.
     
         Parameters
         ----------

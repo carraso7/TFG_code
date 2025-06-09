@@ -7,6 +7,14 @@ Created on Wed May  7 13:58:52 2025
 import math
  
 def print_B_matrix(matrix, name):
+    """
+    Debugging function to visualize matrices
+
+    Returns
+    -------
+    None.
+
+    """
     n = len(matrix)
     print(f"\n{name}:")
 
@@ -22,10 +30,11 @@ def print_B_matrix(matrix, name):
 
 class SAT2_solver:
         
-    def mult_matrix_or_and(self, A, B):  ## TODO CHEQUEAR Y TMBN CHEQUEAR DOC
+    def mult_matrix_or_and(self, A, B):  
         """
-        Multiply two binary square matrices A and B using logical AND (for multiplication)
-        and logical OR (for summation), returning a Python list of lists with 0s and 1s.
+        Multiply two binary square matrices A and B using logical AND 
+        (for multiplication) and logical OR (for summation), returning 
+        a Python list of lists with 0s and 1s. Sequential implementation.
     
         Raises:
         - ValueError if A and B are not square or not the same size.
@@ -59,10 +68,11 @@ class SAT2_solver:
         
         return result
     
-    def __mult_matrix_max_plus(self, A, B): ## TODO CHEQUEAR Y TMBN CHEQUEAR DOC
+    def __mult_matrix_max_plus(self, A, B): 
         """
         Multiply two square matrices A and B using + (for multiplication)
         and max (for summation), returning a Python list of lists with numbers.
+        Sequential implementation.
     
         Raises:
         - ValueError if A and B are not square or not the same size.
@@ -103,14 +113,6 @@ class SAT2_solver:
         to matrix A1 that indicates the reachable nodes from each node in a 
         directed graph (transitive closure).
 
-        Parameters ### TODO RELLENAR O QUITAR
-        ----------
-        A1 : TYPE
-            DESCRIPTION.
-        n_variables : TYPE
-            DESCRIPTION.
-        n_variable : TYPE
-            DESCRIPTION.
 
         Returns
         -------
@@ -154,7 +156,6 @@ class SAT2_solver:
         
         # Add edges from implications
         for u, v in implications:
-            ### TODO MIRAR SI ESTO VA ASÍ BIEN, EL FOR Y SI NOS VIENEN LAS IMPLICACIONES NEGATIVAS Y POSITIVAS EN implications
             transitive_closure[u][v] = 1
     
         return transitive_closure
@@ -194,15 +195,14 @@ class SAT2_solver:
                     # Same strong component (non-diagonal)
                     B[y][z] = 0
                 elif A1[y][z] == 1 and A1[z][y] == 0:
-                    # Implication between two strong components (only one way) ### TODO REVISAR SI ESTA MATRIZ SE INICIALIZA BIEN Y ES REALMENTE COMO PIENSO
+                    # Implication between two strong components (only one way) 
                     B[y][z] = 1
         return B
 
     
     def is_solvable(self, implications, n_variables):
         """
-        Determines whether a given 2-SAT formula is satisfiable using the 
-        technique described in ### TODO PONER REFERENCIA.
+        Determines whether a given 2-SAT formula is satisfiable 
     
         Parameters
         ----------
@@ -229,19 +229,18 @@ class SAT2_solver:
                 
         """
         adj_matrix = self.__init_transitive_closure(implications, n_variables)
-        A1 = adj_matrix ## TODO CHEQUEAR SI EL +1 DE ABAJO ESTÁ BIEN
-        # print_matrix(A1, "A1 inicial") ### TODO PRINT QUITAR
+        A1 = adj_matrix 
         for _ in range(int(math.log2(n_variables * 2)) + 1): # 2*n_variables because we take the negated variables as well
             A1 = self.mult_matrix_or_and(A1, A1)
-        # print_matrix(A1, "A1 final") ### TODO PRINT QUITAR
         for n_variable in range(n_variables):
             if self.__negated_same_str_component(A1, n_variables, n_variable):
                 return False, A1
         return True, A1
 
-    def get_truth_assigment(self, implications, n_variables): ### TODO PONER PAPER REFERENCIA
+    def get_truth_assigment(self, implications, n_variables): 
         """
-        Solves the 2-SAT problem by computing a satisfying truth assignment, if possible.
+        Solves the 2-SAT problem by computing a satisfying truth assignment, 
+        if possible.
     
         Parameters
         ----------
@@ -268,18 +267,17 @@ class SAT2_solver:
                 - 'B1': Max-plus matrix of longest paths,
                 
         """
-        # Get A'' and B'' matrices of the paper (A1 and B1) ### TODO ASEGURARSE DE LA REFERENCIA
         solvable, A1 = self.is_solvable(implications, n_variables)
         if not solvable:    
             info = {"A1" : A1, "B1" : None}
             return None, info
-        B1 = self.__init_longest_paths(A1) ### TODO VER SI implications SON NECESARIAS, CREO Q NO
-        for _ in range(int(math.log2(n_variables * 2)) + 1):## TODO CHEQUEAR SI EL +1  ESTÁ BIEN
+        B1 = self.__init_longest_paths(A1) 
+        for _ in range(int(math.log2(n_variables * 2)) + 1):
             B1 = self.__mult_matrix_max_plus(B1, B1)
             
+        # Construct satisfying assignment.
         results = []
         
-        #### TODO TODO REVISAR BIEN ESTE PÁRRAFO QUE SUSTITUYE AL PARRAFO ANTERIOR
         def compute_s_vector(A1): 
             n = len(A1)
             s = [None] * n
@@ -302,17 +300,6 @@ class SAT2_solver:
                 s_y = s[n_variable]
                 s_not_y = s[n_variables + n_variable]
                 results.append(s_y < s_not_y)
-        #### TODO TODO FIN REVISAR BIEN ESTE PÁRRAFO QUE SUSTITUYE AL PARRAFO ANTERIOR
         info = {"A1" : A1, "B1" : B1}
         return results, info
-        
-
-
-        """"
-        for n_variable in range(n_variables):
-            # Each variable is true ifff its longest path to a sink is lower 
-            # than the longest path to a sink of the negated variable. 
-            print(n_variable, max(B1[n_variable]), max(B1[n_variables + n_variable]))
-            print(max(B1[n_variable]) <= max(B1[n_variables + n_variable]))
-            results.append(max(B1[n_variable]) <= max(B1[n_variables + n_variable]))
-        """        
+    

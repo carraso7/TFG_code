@@ -1,14 +1,3 @@
-"""
-Created on Thu Mar 20 14:33:45 2025
-
-@author: Carlos
-
-We consider that the graph has n nodes and m edges. At most, graphs can have
-3n edges. All the complexities are calculated using n^6 processors. 
-"""
-
-### TODO Falta anotar todo el cálculo de complejidad
-
 import networkx as nx
 from itertools import combinations
 
@@ -72,8 +61,8 @@ class TriconnectedFinder():
     
     def __find_relation_R(self, G, connected_components):
         """
-        Finds the relation R described in the paper for each pair of nodes in 
-        graph `G`. ### TODO INCLUIR REFERENCIA PAPER
+        Finds the relation R for each pair of nodes in 
+        graph `G`. 
 
         Parameters
         ----------
@@ -91,20 +80,14 @@ class TriconnectedFinder():
             are R-related if and only if `relation_R[i][j]` is true.
             
         """
-        ### TODO hacer que el index se calcule una sola vez para todos los métodos que lo usan
-        ### TODO ESTO SE PUEDE HACER CON UNA MATRIZ TRIANGULAR O SPARSE MEJOR O INCLUSO CON ALGUNA CLASE DE RELACIONES
         node_index = {node: i for i, node in enumerate(G.nodes)}
         relation_R = [[True for _ in range(len(G.nodes))] for _ in range(len(G.nodes))]
         for pair in list(combinations(G.nodes, 2)):
-            ## TODO NO HACE FALTA ESTE BOOLEANO
             related = True
             for sep_pair in connected_components.keys():
                 if (pair[0] not in sep_pair) and (pair[1] not in sep_pair):
                     if connected_components[sep_pair][pair[0]] != connected_components[sep_pair][pair[1]]:
-                        # print("sep_pair", sep_pair)
-                        # print("pair", pair)
                         related = False
-                        #break ## TODO CHECKEAR ESTE BREAK
             relation_R[node_index[pair[0]]][node_index[pair[1]]] = related
             relation_R[node_index[pair[1]]][node_index[pair[0]]] = related
                 
@@ -113,7 +96,7 @@ class TriconnectedFinder():
     
     def __find_relation_T(self, G, relation_R):
         """
-        Find relation T described in the paper for graph G.  ### TODO escribir referencia paper
+        Find relation T for graph G.  
 
         Parameters
         ----------
@@ -130,7 +113,6 @@ class TriconnectedFinder():
             and only if they are in a tuple in the list `relation_T`.
 
         """
-        # TODO SACAR EL NODE_INDEX UNA SOLA VEZ Y POASARLO A LOS 3 MÉTODOS QUE SE NECESITAN
         node_index = {node: i for i, node in enumerate(G.nodes)}
         relation_T = []
         for trio in list(combinations(G.nodes, 3)):
@@ -166,11 +148,10 @@ class TriconnectedFinder():
         node_index = {node: i for i, node in enumerate(G.nodes)}
         triply_components = []
         for rel_T_elem in rel_T: 
-            ### TODO IGUAL ES MÁS FÁCIL ITERAR POR LOS SEP PAIR A TRAVÉS DE CADA TCC ENCONTRADA
-            triply_component = list(rel_T_elem) ### TODO AQUÍ REVISAR SI TIENE DENTRO UN SEP PAIR Y EN TAL CASO QUIZÁ AÑADIR UN GHOST EDGE
+            triply_component = list(rel_T_elem) 
             for node in G.nodes:
                 if rel_R[node_index[rel_T_elem[0]]][node_index[node]] and rel_R[node_index[rel_T_elem[1]]][node_index[node]] and rel_R[node_index[rel_T_elem[2]]][node_index[node]]:
-                    triply_component.append(node) ### TODO CADA VEZ QUE SE AÑADE UNO, VER SI FORMA PARTE DE UN SEP PAIR Y, EN TAL CASO, SI TAMBIÉN ESTÁ EL OTRO
+                    triply_component.append(node) 
             triply_components.append(triply_component)
         # Delete repeated triply connected components
         TCCs_lists = list(set(frozenset(comp) for comp in triply_components))
@@ -178,7 +159,7 @@ class TriconnectedFinder():
         for tcc_list in TCCs_lists:
             tcc = {"node_list": tcc_list, "virtual_edges": []}
             for sep_pair in sep_pairs:
-                if (sep_pair[0] in tcc_list) and (sep_pair[1] in tcc_list) and (sep_pair not in G.edges()):  ### TODO VER SI SEP_PAIR TIENE FORMATO CORRECTO
+                if (sep_pair[0] in tcc_list) and (sep_pair[1] in tcc_list) and (sep_pair not in G.edges()):  
                     tcc["virtual_edges"].append(sep_pair)    
             TCCs.append(tcc)
         return TCCs 
@@ -186,7 +167,7 @@ class TriconnectedFinder():
     
     def triconnected_comps(self, G):
         """
-        Get triconnected components of graph `G` as in #TODO REFERENCE PAPER 
+        Get triconnected components of graph `G` 
         
         Parameters
         ----------
