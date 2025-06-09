@@ -3,10 +3,19 @@ import random
 import planarity_criterion
 from triconnected_components import TriconnectedFinder
 
-class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
+class GraphExamples: 
 
     @staticmethod
-    def get_examples(): ### TODO METER EJEMPLOS APROPIADOS PARA PLANAR PRINTER Y PARA PLANAR CRIT DISTINTOS, CON COMPONENTES TRICO MÁS GRANDES, COMO CON DODECAEDROS O COSAS ASÍ EN EL EXTERIOR
+    def get_examples(): 
+        """
+        Returns a list of graph examples.
+
+        Returns
+        -------
+        graph_examples : list of Networkx.graphs
+            List of graph examples.
+
+        """
         ### MAKE GRAPH EXAMPLES ###
         graph_examples = []
         
@@ -105,7 +114,7 @@ class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
         graph_examples.append(G9)
         
         
-        ### GRAPHS IN THE PAPER ###
+        ### GRAPHS IN THE ARTICLE ###
         
         ## G10 ##
         
@@ -158,7 +167,7 @@ class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
         # Add to graph examples
         graph_examples.append(G12)
 
-        ### EXAMPLES FROM THE REUNION ###
+        ### EXAMPLES FROM THE MEETING ###
 
         # Create two copies of the octahedral graph
         oct1 = nx.octahedral_graph()
@@ -309,28 +318,3 @@ class GraphExamples: ### TODO: HAY QUE PONER LOS IMPORTS ASÍ PERO ES MUY RARO
 
                 if planar is None or is_planar == planar:
                     return subG, G
-"""
-    @staticmethod PREV
-    def extract_triconnected_subgraph(n=50, seed=42):
-        random.seed(seed)
-        G = nx.gnp_random_graph(n=n, p=0.2, seed=seed)
-        
-        # Make sure it's connected (optional, improves quality)
-        if not nx.is_connected(G):
-            G = max((G.subgraph(c) for c in nx.connected_components(G)), key=len).copy()
-    
-        # Use your TriconnectedFinder class
-        finder = TriconnectedFinder()
-        TCCs, *_ = finder.triconnected_comps(G)
-    
-        if not TCCs:
-            print("No triconnected component found. Try increasing edge density or node count.")
-            return G, None
-    
-        # Select the largest triconnected component
-        largest_tcc = max(TCCs, key=len)
-        tcc_subgraph = G.subgraph(largest_tcc).copy()
-    
-        return G, tcc_subgraph
-    
-"""

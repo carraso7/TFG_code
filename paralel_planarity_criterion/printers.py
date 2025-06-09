@@ -390,84 +390,131 @@ class ConnectedComponentsDrawer(): ### TODO LEER SI EN PYTHON ES CORRECTO PONER 
             plt.savefig(save_path, bbox_inches='tight')
     
         plt.show()
+        
+    ### IGUAL QUE EL ANTERIOR PERO ESPECIFICANDO POSICIONES    
+    def print_n_connected_components_fixed_positions(self, G, NCC, max_line_length=40, N=-1,
+                                 save=False, name="connected components", 
+                                 dir_name="images", fixed_pos=None):
+        """
+        Prints the N connected components of the graph. In the case N=3, it 
+        prints the components as the definition in the paper, also called
+        triconnected blocks in this case.
     
-    """
-    def print_n_connected_components1(self, G, NCC, max_line_length=40, N=-1):
+        Parameters
+        ----------
+        G : networkx.Graph
+            The full graph to analyze and plot.
+        NCC : list
+            List of connected components or triconnected blocks (dicts for N=3).
+        max_line_length : int
+            Maximum characters per line for labeling component lists.
+        N : int
+            The connectivity level (e.g., 2, 3). Use 3 for triconnected blocks.
+        save : bool
+            If True, saves the figure to the given directory.
+        name : str
+            Filename to use when saving (without extension).
+        dir_name : str
+            Folder where the image is saved if save=True.
+        fixed_pos : dict, optional
+            Dictionary like {node: (x, y)} to fix positions of selected nodes
+            (e.g., {4: (0, 0)}).
+        """
+        import matplotlib.pyplot as plt
+        import networkx as nx
+        import textwrap
+    
+        fixed_pos = fixed_pos or {}
+    
         # Initialize classification dictionaries
-        node_classes = {}  # Store which NCC each node belongs to
-        edge_classes = {}  # Store which NCC each edge belongs to
-        
-        # Assign nodes and edges to their NCCs
+        node_classes = {}
+        edge_classes = {}
+        virtual_edge_classes = {}
+    
         for class_idx, component in enumerate(NCC):
-            for node in component:
+            nodes = component["node_list"] if N == 3 else component
+            virt_edges = component["virtual_edges"] if N == 3 else []
+    
+            for node in nodes:
                 node_classes.setdefault(node, []).append(class_idx)
-            
             for edge in G.edges():
-                if edge[0] in component and edge[1] in component:
+                if edge[0] in nodes and edge[1] in nodes:
                     edge_classes.setdefault(edge, []).append(class_idx)
-        
-        # Define colors:
+            for v_edge in virt_edges:
+                v_edge_norm = tuple(sorted(v_edge))
+                virtual_edge_classes.setdefault(v_edge_norm, []).append(class_idx)
+    
         num_components = len(NCC)
-        color_map = plt.cm.get_cmap("tab10", num_components)  # Use tab10 colormap
+        color_map = plt.cm.get_cmap("tab10", num_components)
     
         node_colors = []
-        node_labels = {}  # Store font colors for each node
+        node_labels = {}
         for node in G.nodes():
-            if node not in node_classes:  
-                node_colors.append("black")  # Uncategorized node
-                node_labels[node] = "white"  # Set font color to white for black nodes
-            elif len(node_classes[node]) > 1:  
-                node_colors.append("gray")  # Shared node
-                node_labels[node] = "black"  # Default font color
-            else:  
-                node_colors.append(color_map(node_classes[node][0]))  
-                node_labels[node] = "black"  # Default font color
+            if node not in node_classes:
+                node_colors.append("black")
+                node_labels[node] = "white"
+            elif len(node_classes[node]) > 1:
+                node_colors.append("gray")
+                node_labels[node] = "black"
+            else:
+                node_colors.append(color_map(node_classes[node][0]))
+                node_labels[node] = "black"
     
         edge_colors = []
         for edge in G.edges():
-            if edge not in edge_classes:  
-                edge_colors.append("black")  
-            elif len(edge_classes[edge]) > 1:  
-                edge_colors.append("gray")  
-            else:  
-                edge_colors.append(color_map(edge_classes[edge][0]))  
+            if edge not in edge_classes:
+                edge_colors.append("black")
+            elif len(edge_classes[edge]) > 1:
+                edge_colors.append("gray")
+            else:
+                edge_colors.append(color_map(edge_classes[edge][0]))
     
-        # Create figure and adjust layout
         fig, ax = plt.subplots(figsize=(7, 5))
-        pos = nx.spring_layout(G, seed=42)  
-        nx.draw(G, pos, with_labels=True, node_color=node_colors, edge_color=edge_colors, 
-                node_size=600, edge_cmap=color_map, font_size=10, ax=ax)
-        
-        # Draw labels with appropriate font color
+    
+        # Compute layout
+        pos = nx.spring_layout(
+            G,
+            seed=42,
+            pos=fixed_pos,
+            fixed=fixed_pos.keys()
+        )
+    
+        nx.draw(
+            G, pos, with_labels=False, node_color=node_colors, edge_color=edge_colors,
+            node_size=600, edge_cmap=color_map, font_size=10, ax=ax
+        )
+    
         for node, (x, y) in pos.items():
-            plt.text(x, y, str(node), ha='center', va='center', 
-                     color=node_labels[node])
+            plt.text(x, y, str(node), ha='center', va='center', color=node_labels[node])
     
-        if (N == -1):
-            N = "N"
-        else:
-            N = str(N)
-        
-        # Add title
-        plt.title("Graph with " + N + "-connected Components\n(Gray = Shared, Black = Uncategorized)")
+        if N == 3:
+            for v_edge, classes in virtual_edge_classes.items():
+                x0, y0 = pos[v_edge[0]]
+                x1, y1 = pos[v_edge[1]]
+                color = "gray" if len(classes) > 1 else color_map(classes[0])
+                ax.plot([x0, x1], [y0, y1], linestyle='--', color=color, linewidth=2)
     
-        # Adjust margins to make space for the text (left margin for separation)
-        plt.subplots_adjust(left=0.3)  # Increase left margin to create space
+        N_label = str(N) if N != -1 else "N"
+        plt.title(f"Graph with {N_label}-connected Components\n(Gray = Shared, Black = Uncategorized)")
+        plt.subplots_adjust(left=0.3)
     
-        # Format the NCC list with line wrapping
         formatted_ncc_list = []
-        for i, comp in enumerate(NCC):
-            comp_str = N + f"CC {i+1}: {sorted(list(comp))}"
-            wrapped_lines = textwrap.wrap(comp_str, width=max_line_length)
-            formatted_ncc_list.extend(wrapped_lines)
+        for i, component in enumerate(NCC):
+            comp_nodes = sorted(component["node_list"]) if N == 3 else sorted(component)
+            comp_str = f"{N_label}CC {i+1}: {comp_nodes}"
+            formatted_ncc_list.extend(textwrap.wrap(comp_str, width=max_line_length))
     
-        # Move the text to the left and ensure proper spacing
-        subtitle_text = "\n".join(formatted_ncc_list)
-        plt.figtext(0.02, 0.5, subtitle_text, wrap=True, horizontalalignment='left', 
-                    verticalalignment='center', fontsize=10)
+        plt.figtext(0.02, 0.5, "\n".join(formatted_ncc_list), wrap=True,
+                    horizontalalignment='left', verticalalignment='center', fontsize=10)
+    
+        if save:
+            os.makedirs(dir_name, exist_ok=True)
+            save_path = os.path.join(dir_name, f'{name}.png')
+            plt.savefig(save_path, bbox_inches='tight')
     
         plt.show()
-        """
+
+
         
 class SPQR_drawer():
 

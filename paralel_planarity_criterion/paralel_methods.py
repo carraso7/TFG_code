@@ -1,15 +1,28 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon May 19 12:01:55 2025
-
-@author: carlo
-"""
-
 import pyopencl as cl
 import numpy as np
 
 @staticmethod
 def multiply_or_and(A, B, device=None):
+    """
+    Performs an AND OR matrix multiplication in paralel between matrices A and 
+    B. and returns the result matrix 
+
+    Parameters
+    ----------
+    A : np.matrix n*n
+        First matrix to multiply.
+    B : np.matrix n*n
+        Second matrix to multiply.
+    device : pyopencl device
+        Device to perform the paralel multiplication. If it is None, any 
+        available GPU device is chosen. The default is None.
+
+    Returns
+    -------
+    C : np.matrix n*n
+        Result matrix.
+
+    """
     
     if device is None:
         platforms = cl.get_platforms()
@@ -18,7 +31,7 @@ def multiply_or_and(A, B, device=None):
     ctx = cl.Context([device])
     queue = cl.CommandQueue(ctx)
     N = len(A) 
-    A = np.array(A, dtype=np.int8) ### TODO IGUAL ESTO AUMENTA LA COMPLEJIDAD Y LAS MATRICES DEBERÍAN SER ESTO DESDE EL PRINCIPIO
+    A = np.array(A, dtype=np.int8) 
     B = np.array(B, dtype=np.int8)     
     C = np.zeros((N, N), dtype=np.int8) 
     
@@ -80,10 +93,14 @@ def multiply_or_and(A, B, device=None):
     C_buf = cl.Buffer(ctx, mf.WRITE_ONLY, size=C.nbytes)
     
     
-    program.partial_and_kernel(queue, (N, N, N), None, A_buf, B_buf, partial_buf, np.int32(N))
+    program.partial_and_kernel(
+        queue, (N, N, N), None, A_buf, B_buf, partial_buf, np.int32(N)
+        )
     queue.finish()
     
-    program.parallel_reduce_or(queue, (N, N, N), (1, 1, N), partial_buf, C_buf, np.int32(N))
+    program.parallel_reduce_or(
+        queue, (N, N, N), (1, 1, N), partial_buf, C_buf, np.int32(N)
+        )
     queue.finish()
     
     # Copy result back to C.
