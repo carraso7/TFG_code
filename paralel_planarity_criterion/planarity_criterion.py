@@ -1,3 +1,4 @@
+
 import networkx as nx
 import random
 from itertools import combinations, permutations
@@ -663,10 +664,9 @@ class PlanarityCriterion:
         TCCs, info = finder.triconnected_comps(G)
         info["TCCs"] = TCCs
         info["planarity_info"] = []
-        for tcc_list in TCCs:
+        for tcc_list in TCCs: 
             TCC_info = {}
             tcc = G.subgraph(tcc_list["node_list"]).copy()
-
             # Add virtual edges to each tcc
             tcc.add_edges_from(tcc_list["virtual_edges"])
             
@@ -685,7 +685,7 @@ class PlanarityCriterion:
             TCC_info["bridges"] = bridges
             TCC_info["truth_assign"] = truth_assign
             TCC_info["rel_in"] = "No info"
-            info["Failing_tcc"] = "No info"
+            info["failing_tcc"] = "No info"
             info["failing_reason"] = "No info"
             info["failing edge"] = "No info"
             
